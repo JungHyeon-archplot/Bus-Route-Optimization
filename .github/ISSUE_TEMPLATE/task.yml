@@ -1,0 +1,21 @@
+name: 구현 또는 조사
+description: API 수학 데이터 화면 검증 작업
+title: "[Task] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: 목적과 범위
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 근거 자료
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 기준
+    validations:
+      required: true

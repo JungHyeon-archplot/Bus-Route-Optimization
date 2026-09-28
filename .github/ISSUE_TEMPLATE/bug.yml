@@ -1,0 +1,17 @@
+name: 오류 보고
+description: 계산 또는 화면 오류
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 재현 방법과 예상 및 실제 결과
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 기준과 회귀 테스트
+    validations:
+      required: true
