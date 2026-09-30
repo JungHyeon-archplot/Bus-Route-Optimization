@@ -1,0 +1,11 @@
+{
+  // npm run build 로 dist/를 만든 뒤 배포합니다. 비밀값은 여기 쓰지 말고 secret으로 넣으세요.
+  "name": "bus-route-lab",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/config.json", "/live/*"]
+  }
+}

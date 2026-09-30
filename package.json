@@ -13,6 +13,8 @@
     "experiment": "node scripts/experiment.mjs",
     "collect:area": "node --env-file-if-exists=.env scripts/collect-area.mjs",
     "collect:routes": "node --env-file-if-exists=.env scripts/collect-routes.mjs",
-    "observe": "node --env-file-if-exists=.env scripts/observe-arrivals.mjs"
+    "observe": "node --env-file-if-exists=.env scripts/observe-arrivals.mjs",
+    "build": "node scripts/build.mjs",
+    "deploy": "npm run build && npx wrangler deploy"
   }
 }

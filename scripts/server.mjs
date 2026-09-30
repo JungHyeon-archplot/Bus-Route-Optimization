@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {request} from './collect.mjs';
+import {CSP,toLiveBuses} from '../src/live.js';
 export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),{kakaoJsKey=process.env.KAKAO_MAP_JS_KEY||'',fetchPositions=routeId=>request('buspos/getBusPosByRtid',{busRouteId:routeId}),liveDailyLimit=Number(process.env.LIVE_DAILY_LIMIT||950)}={}) {
   // Seoul vehicles report about every 20 s, so a 9 s cache loses nothing. The dev key allows 1,000 calls/day per function;
   // count them per KST day and stop before the agency does.
@@ -31,9 +32,7 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
       try{
         usage.calls++;
         const response=await fetchPositions(routeId);
-        const buses=(response.msgBody?.itemList??[]).map(item=>({vehId:item.vehId,plainNo:item.plainNo,lat:Number(item.gpsY),lng:Number(item.gpsX),dataTm:item.dataTm,stopFlag:item.stopFlag==='1'}))
-          .filter(bus=>Number.isFinite(bus.lat)&&Number.isFinite(bus.lng));
-        const body={routeId,fetchedAt:new Date().toISOString(),buses};
+        const body=toLiveBuses(routeId,response);
         liveCache.set(routeId,{at:Date.now(),body});return json(200,{...body,...quota()});
       }catch(error){return json(502,{error:'서울시 버스위치 API 응답을 받지 못했습니다.'});}
     }
@@ -47,7 +46,7 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
     try {
       const data=await readFile(path.join(root,file));
       res.writeHead(200,{'Content-Type':mime[path.extname(file)],'X-Content-Type-Options':'nosniff',
-        'Content-Security-Policy':"upgrade-insecure-requests; default-src 'self'; script-src 'self' https://dapi.kakao.com https://t1.daumcdn.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://dapi.kakao.com; object-src 'none'; frame-ancestors 'none'",
+        'Content-Security-Policy':CSP,
         'Cache-Control':'no-store'});
       res.end(req.method==='HEAD'?undefined:data);
     }catch{res.writeHead(404);res.end('Not found');}
