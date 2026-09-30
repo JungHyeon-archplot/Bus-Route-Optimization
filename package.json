@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node scripts/server.mjs",
+    "start": "node --env-file-if-exists=.env scripts/server.mjs",
     "test": "node --test",
     "collect": "node --env-file-if-exists=.env scripts/collect.mjs",
     "experiment": "node scripts/experiment.mjs"

@@ -23,4 +23,20 @@ test('local server serves UI but denies secrets, legacy and traversal',async()=>
   for(const p of ['/.env','/.git/config','/legacy/prototype.py','/public/%2e%2e/.env'])assert.equal((await fetch(base+p)).status,404);
  }finally{await new Promise(r=>server.close(r));}
 });
+test('public configuration contains only the browser map key',async()=>{
+ const server=createServer(undefined,{kakaoJsKey:'browser-key',serviceKey:'private-key'});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{
+  const res=await fetch('http://127.0.0.1:'+server.address().port+'/config.json');
+  assert.equal(res.status,200);assert.deepEqual(await res.json(),{kakaoJsKey:'browser-key'});
+ }finally{await new Promise(r=>server.close(r));}
+});
+test('JSON collection checks agency status and sets resultType',async()=>{
+ const response=await collect('stations','충무로',{key:'secret',format:'json',fetchImpl:async url=>{
+  assert.equal(url.searchParams.get('resultType'),'json');
+  return {ok:true,text:async()=>JSON.stringify({msgHeader:{headerCd:'0'},msgBody:{itemList:[]}})};
+ }});
+ assert.deepEqual(response.msgBody.itemList,[]);
+ await assert.rejects(()=>collect('stations','충무로',{key:'secret',format:'json',fetchImpl:async()=>({ok:true,text:async()=>'{"msgHeader":{"headerCd":"7"}}'})}),/기관 오류/);
+});
 

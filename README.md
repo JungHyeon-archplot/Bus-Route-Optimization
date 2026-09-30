@@ -31,3 +31,19 @@ npm start
 
 `legacy/`는 팀원이 제공한 원본 보존용이며 알려진 오류가 있어 결과 산출에 사용하지 않습니다.
 API 비밀키·원시 차량 식별정보는 커밋하지 않습니다. 공개 라이선스는 팀 합의 전 부여하지 않습니다.
+
+## 실제 지도 및 팀 자료 (2026-09-30)
+
+`npm start`는 로컬 `.env`에서 `KAKAO_MAP_JS_KEY`를 읽습니다. 카카오 개발자 콘솔의 JavaScript SDK 도메인에 `http://localhost:8080`을 등록하세요. 브라우저 키는 도메인 제한을 사용하며, 서버용 `SEOUL_BUS_SERVICE_KEY`는 공개하지 않습니다.
+
+실제 서울시 API의 충무로 검색 결과 6개를 `data/public/stations.json`에 보존했습니다. 이름이 같은 정류장도 ID별로 구분합니다. 이 자료는 충무로 검색 결과이며 연구 권역 전체나 실시간 운행을 나타내지 않습니다. 수집시각과 출처는 데이터 및 화면에 표시됩니다.
+
+```sh
+npm run collect -- stations 충무로 json
+node scripts/import-stops.mjs data/raw/stations-수집시각.json
+npm start
+```
+
+서울시 API는 이번 환경에서 공식 HTTP 주소로 응답을 확인했고 HTTPS 요청은 시간 초과됐습니다. 현재 수집은 로컬에서만 수행합니다. 공개 배포 전에는 HTTPS 지원 게이트웨이 또는 공개 데이터 스냅샷 갱신 방식을 확정해야 합니다. Cloudflare에 인증키를 브라우저 코드로 올리지 마세요.
+
+팀 자료 연결은 `docs/TEAM_EVIDENCE.md`, 두 거점 목록은 `data/reference/hub-models.json`을 참고하세요. 실제 노선 순서 수집과 다중 노선 최적화는 아직 완료되지 않았습니다. 지도 표시가 가상 실험 결과를 실측으로 바꾸지는 않습니다.
