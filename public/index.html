@@ -1,79 +1,60 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>충무로 정류장 실험</title>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>충무로 정류장 시뮬레이터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/public/style.css"></head>
-<body><header class="masthead"><div class="masthead-copy"><p class="place">충무로 · 동국대 권역</p><h1>네 가지 색이면 버스 병목이 풀릴까?</h1><p>"4색 정리로 버스를 나누면 병목이 풀린다"는 팀의 첫 가설을 서울시 실제 정류장·노선 자료로 검증했습니다.</p></div>
-<figure class="bis" aria-labelledby="bis-stop"><figcaption id="bis-stop">정류장 자료를 불러오는 중</figcaption><ol id="bis-rows"></ol><p id="bis-foot"></p></figure></header>
-<main><nav class="view-tabs" role="tablist" aria-label="화면 선택"><button id="tab-berth" role="tab" aria-selected="true" aria-controls="berth-view">검증 이야기</button><button id="tab-simulation" role="tab" aria-selected="false" aria-controls="simulation-view" tabindex="-1">부록: 출발 시간 나누기</button><button id="tab-field" role="tab" aria-selected="false" aria-controls="field-view" tabindex="-1">실제 지역 자료</button></nav>
-<div id="berth-view" role="tabpanel" aria-labelledby="tab-berth">
-
-<section class="chapter" id="ch-myeongdong"><span class="chapter-no">1</span><div class="chapter-body"><h2>명동에서 있었던 일</h2>
-<ol class="timeline">
-<li><time>2023. 12. 26.</time> 서울시가 명동입구 광역버스 정류장에 노선별 줄서기 표지판을 세웠습니다. 노선마다 설 자리를 정한 셈입니다.</li>
-<li><time>그 뒤</time> 서울역부터 명동입구까지 버스가 꼬리를 무는 열차 현상이 심해졌습니다.</li>
-<li><time>2024. 1. 5.</time> 표지판 운영을 유예했습니다.</li>
-<li><time>해결</time> 일부 노선(8개)을 가까운 다른 정류소로 옮기자 운행시간이 최대 13분 줄고 승객 밀집도가 절반 이하로 내려갔습니다.</li></ol>
-<p class="question">노선마다 설 자리를 정했는데 왜 오히려 막혔을까요?</p>
-<p class="fine">출처: <a href="https://imnews.imbc.com/news/2024/society/article/6559761_36438.html" target="_blank" rel="noopener noreferrer">MBC 2024. 1.</a> · <a href="https://m.kukinews.com/article/view/kuk202403250064" target="_blank" rel="noopener noreferrer">쿠키뉴스 2024. 3.</a> · <a href="https://mediahub.seoul.go.kr/archives/2010415" target="_blank" rel="noopener noreferrer">서울시 내 손안에 서울</a></p></div></section>
-
-<section class="chapter" id="ch-hypothesis"><span class="chapter-no">2</span><div class="chapter-body"><h2>우리의 첫 가설</h2>
-<p>팀의 첫 시뮬레이션은 버스를 네 색으로 나누고, 색마다 설 정류장을 정했습니다. 버스가 일부 정류장을 건너뛰니 병목이 줄어 보였습니다. 4색 정리가 버스 병목을 풀어 준다는 가설입니다.</p>
-<p>이 방식은 승객이 탈 수 있는 버스도 함께 줄입니다. 그래서 모든 노선이 지금처럼 모든 정류장에 서게 두고, <strong>한 정류장 안에서 설 자리(정차면)만 색으로 나누는</strong> 방식으로 바꿔 검증했습니다. 명동의 줄서기 표지판과 같은 방식입니다.</p></div></section>
-
-<section class="chapter" id="ch-data"><span class="chapter-no">3</span><div class="chapter-body"><h2>실제 자료</h2>
-<dl class="facts" id="facts"></dl>
-<h3>실제로도 버스가 몰려 올까?</h3>
-<p id="obs-summary">관측 자료를 불러오는 중입니다.</p>
-<svg id="obs-strip" viewBox="0 0 720 110" role="img" aria-label="관측한 버스 통과 시각"></svg>
-<p id="obs-note" class="fine"></p></div></section>
-
-<section class="chapter" id="ch-colors"><span class="chapter-no">4</span><div class="chapter-body"><h2>발견 1. 네 색으로는 부족하다</h2>
-<p>한 정류장에 서는 노선 가운데, 이 권역에서 정류장을 여러 곳 함께 지나는 두 노선을 선으로 잇습니다. 같이 달리니 같이 도착하기 쉬운 노선입니다. 이어진 노선끼리 다른 색, 곧 다른 정차면을 줍니다.</p>
-<div class="controls" aria-label="충돌 그래프 설정"><label>정류장 <select id="berth-stop"></select></label><label>함께 달린다고 볼 공유 정류장 <input id="berth-shared" type="range" min="2" max="5" value="3"><output id="berth-shared-out">3곳 이상</output></label></div>
-<div class="berth-grid"><div><svg id="conflict" viewBox="0 0 460 420" role="img" aria-label="노선 충돌 그래프"></svg></div>
-<div><p id="coloring-note" class="callout"></p><p>4색 정리는 평면 지도, 곧 선이 서로 엇갈리지 않게 그릴 수 있는 그래프에 대한 정리입니다. 노선 충돌 그래프는 그런 보장이 없습니다. 다섯 노선이 모두 서로 이어지면(K5) 평면에 그릴 수 없고, 다섯 색이 필요합니다. 화면의 색 수는 가능한 모든 배정을 따져 구한 정확한 최소값입니다.</p></div></div></div></section>
-
-<section class="chapter" id="ch-space"><span class="chapter-no">5</span><div class="chapter-body"><h2>발견 2. 병목을 푼 건 색이 아니라 공간이었다</h2>
-<p>위에서 고른 정류장에 똑같은 버스 도착을 넣고, 정차 규칙만 바꿔 비교합니다. 정차면을 늘린 효과와 색으로 지정한 효과를 따로 볼 수 있습니다.</p>
-<div class="controls" aria-label="정차 시간 설정"><label>버스 한 대 정차 시간 <input id="berth-dwell" type="range" min="15" max="60" step="5" value="40"><output id="berth-dwell-out">40초</output></label><span class="fine">승객이 많은 시간대일수록 깁니다. 값을 바꿔 보세요.</span></div>
-<p id="berth-context"></p><div class="table-wrap"><table><thead><tr><th>규칙</th><th>기다린 버스</th><th>평균 대기</th><th>최대 대기</th><th>최대 줄</th></tr></thead><tbody id="berth-table"></tbody></table></div>
-<p class="callout">정차면 수가 같다면, 빈 곳 아무 데나 서는 편이 색별로 지정하는 것보다 버스가 덜 기다립니다. 지정하면 자기 정차면이 빌 때까지 옆자리가 비어 있어도 기다려야 하기 때문입니다.</p>
-<div class="route-sim"><div class="panel-title"><h2>실제 노선 위에서 움직여 보기</h2><span id="sim-clock">0분 경과</span></div>
-<p>선은 서울시가 제공한 실제 노선 경로이고, 점 하나가 버스 한 대입니다. 노란 원 정류장에서만 정차면 줄을 계산합니다. 빨간 테두리는 정차면이 비기를 기다리는 버스입니다.</p>
-<div class="sim-controls"><div role="group" aria-label="정차 규칙"><button data-rule="single" aria-pressed="true" class="secondary">정차면 1개</button><button data-rule="pooled" aria-pressed="false" class="secondary">빈 곳 아무 데나</button><button data-rule="colored" aria-pressed="false" class="secondary">색별로 지정</button></div>
-<button id="sim-play">재생</button><button id="sim-reset" class="secondary">처음으로</button><label>배속 <select id="sim-rate"><option value="10">10배</option><option value="30" selected>30배</option><option value="90">90배</option></select></label>
-<label class="live"><input id="live-toggle" type="checkbox"> 지금 실제 버스 위치 겹쳐 보기</label><label>갱신 <select id="live-interval"><option value="10">10초</option><option value="15" selected>15초</option><option value="30">30초</option><option value="60">60초</option></select></label></div>
-<p id="route-map-error" role="alert"></p><div id="route-map" aria-label="실제 노선 경로 위 버스 시뮬레이션 지도"></div>
-<p id="sim-stats" role="status"></p><p id="live-status" class="fine"></p>
-<p class="fine"><span id="sim-source"></span> 버스 속도는 일반 정류장 정차를 포함한 평균 시속 15km로 가정했고, 차량 수는 노선 길이·속도·계획 배차간격으로 정했습니다. 마름모 점은 버스위치정보 API의 실제 위치입니다. 서울시 버스는 약 20초마다 위치를 보내므로 10초보다 자주 받아도 새 정보가 없고, 개발계정은 하루 1,000회까지라 간격이 짧을수록 볼 수 있는 시간이 줄어듭니다. <span id="sim-skipped"></span></p></div>
-
-<p class="fine">표의 도착 시각은 노선별 계획 배차간격에 ±90초 흔들림을 준 모의값입니다(난수 seed 1, 2시간). 관광·심야 노선은 뺐습니다.</p></div></section>
-
-<section class="chapter" id="ch-compare"><span class="chapter-no">6</span><div class="chapter-body"><h2>명동과 같은 구조</h2>
-<div class="table-wrap"><table class="compare"><thead><tr><th></th><th>우리 실험</th><th>명동입구 사례</th></tr></thead><tbody>
-<tr><th>설 자리를 정했을 때</th><td>빈 곳 아무 데나보다 버스가 더 기다림</td><td>줄서기 표지판 뒤 버스 열차 현상</td></tr>
-<tr><th>풀린 방법</th><td>정차면(공간)을 늘리면 대기가 거의 사라짐</td><td>노선 일부를 다른 정류소로 분산</td></tr>
-<tr><th>다른 점</th><td>충무로 간선·지선버스, 모의 도착</td><td>광역버스, 실제 운영 결과</td></tr></tbody></table></div>
-<p>같은 원리가 보이지만, 버스 종류와 승객 수가 달라 결과의 크기까지 같다고 말할 수는 없습니다.</p>
-<h3>누가 비용을 지는가</h3>
-<ul class="plain"><li>정류장 건너뛰기(첫 가설): 병목은 줄지만 탈 버스가 줄어드는 비용을 승객이 집니다.</li>
-<li>정차면 지정: 승객은 어디서 기다릴지 알게 되지만, 버스는 자기 자리가 빌 때까지 기다리고 뒤차가 막힙니다.</li>
-<li>정류소 분산: 대기는 줄지만 일부 승객은 더 걸어야 합니다.</li></ul></div></section>
-
-<section class="chapter" id="ch-limits"><span class="chapter-no">7</span><div class="chapter-body"><h2>한계와 다음 단계</h2>
-<ul class="plain"><li>표의 도착은 계획 배차간격을 바탕으로 한 모의값이고, 실측은 한 정류장·세 노선·짧은 시간입니다.</li>
-<li>정차 시간과 버스 속도는 가정값입니다. 현장에서 실제 정차 시간을 재면 가장 크게 나아집니다.</li>
-<li>정차면이 앞뒤로 붙어 있어 앞차가 막으면 못 나가는 효과, 승객이 탈 곳을 찾아 움직이는 효과는 계산에 넣지 않았습니다.</li>
-<li>결론: 수학 정리를 현실에 쓸 때는 적용 조건부터 확인해야 하고, 효과가 어디서 왔는지 나눠 봐야 합니다.</li></ul></div></section>
+<body>
+<header class="bar"><h1>충무로 정류장 시뮬레이터</h1><p>한 정류장에 버스가 한꺼번에 몰리면 얼마나 기다릴까요? 조건을 바꿔 실제 노선 위에서 확인합니다.</p></header>
+<main class="sim-layout">
+<div class="map-wrap">
+ <div id="route-map" aria-label="실제 노선 위 버스 시뮬레이션 지도"></div>
+ <p id="route-map-error" class="map-error" role="alert"></p>
+ <div class="hud" role="status" aria-live="polite"><strong id="sim-clock">0분</strong><span id="sim-stats">재생을 누르면 버스가 움직입니다</span></div>
+ <div class="playbar"><button id="sim-play">재생</button><button id="sim-reset" class="ghost">처음으로</button><label>빠르기 <select id="sim-rate"><option value="10">10배</option><option value="30" selected>30배</option><option value="90">90배</option></select></label></div>
+ <ul class="legend"><li><span class="bus-dot" style="background:#7b858c"></span>시뮬레이션 버스</li><li><span class="bus-dot queued" style="background:#7b858c"></span>자리가 비길 기다리는 버스</li><li><span class="live-dot" style="background:#7b858c"></span>지금 실제 버스</li></ul>
 </div>
-<div id="simulation-view" role="tabpanel" aria-labelledby="tab-simulation" hidden><section class="intro"><strong>6개 거점을 잇는 개념도 · 가상 데이터</strong><p>선은 실제 도로가 아닙니다. 각 구간 900m, 시속 36km, 정차 25초, 차량별 계획 주기 12분을 가정합니다.</p></section>
-<section class="controls" aria-label="재생 설정"><button id="play">재생</button><button id="reset" class="secondary">처음으로</button><label>재생 배속 <select id="speed"><option value="1">1배</option><option value="15" selected>15배</option><option value="50">50배</option></select></label><label class="scrub">관측 시점 <input id="timeline" type="range" min="0" max="3600" step="1" value="0"></label><output id="clock">00:00 / 60:00</output></section>
-<div class="maps"><section class="panel"><div class="panel-title"><h2>① 함께 출발</h2><span>0 · 0 · 0초</span></div><svg id="baseline-map" viewBox="0 0 700 470" role="img" aria-label="동시 출발 시뮬레이션"></svg></section><section class="panel"><div class="panel-title"><h2>② 나누어 출발</h2><span>0 · 240 · 480초</span></div><svg id="staggered-map" viewBox="0 0 700 470" role="img" aria-label="분산 출발 시뮬레이션"></svg></section></div>
-<p class="legend"><span class="dot blue"></span>차량 1 <span class="dot orange"></span>차량 2 <span class="dot teal"></span>차량 3 <span>색은 차량 구분입니다. 네 색을 강제하는 실험이 아닙니다.</span></p>
-<section class="panel results"><div class="panel-title"><h2>같은 60분 동안의 결과</h2><button id="download" class="secondary">실험 결과 JSON</button><button id="csv" class="secondary">사건 기록 CSV</button></div><p>준비구간 36분 이후의 기록입니다. 재생 배속을 바꿔도 아래 결과는 바뀌지 않습니다.</p><div id="metrics"></div><h3>정류장별 서비스와 버스 지연</h3><div class="table-wrap"><table><thead><tr><th>거점</th><th>방문 수 전 / 후</th><th>평균 버스 지연 전 / 후</th><th>최대 대기 대수 전 / 후</th></tr></thead><tbody id="stops"></tbody></table></div><p class="note">승객 대기는 모든 차량을 이용할 수 있고 다음 차량에 탑승 가능한 무작위 도착 승객의 이론값입니다. 실제 승객 수요·정원·환승은 포함하지 않습니다. 버스 지연과 구분하세요.</p></section>
-<section class="math-grid"><article class="panel"><h2>길을 덜 반복하는 계산</h2><p>별도의 가상 무방향 그래프에서 중국인 우체부 문제를 계산합니다. 위 배차 실험과 다른 예제입니다.</p><p id="postman"></p><p id="tour"></p></article><article class="panel"><h2>색칠은 어디에 쓰일까?</h2><p>동시 출발하는 세 운행을 서로 충돌하는 K3로 표현하면 3색으로 구분할 수 있습니다. 이를 출발 시간 후보로 바꾸고, 위 실험에서 다시 검증합니다.</p><p>4색 정리는 평면 그래프에만 적용됩니다. 일반 색칠 결과가 최소 색 수이거나 배차 최적해라는 보장은 없습니다.</p></article></section>
-</div><div id="field-view" role="tabpanel" aria-labelledby="tab-field" hidden><section class="panel results" id="field-study"><h2>실제 지역 살펴보기</h2><p>카카오 지도와 서울시 정류장 자료를 연결하는 조사 화면입니다. 위 가상 배차 실험의 운행 경로와 독립적입니다.</p><p id="map-status" role="status">지도 연결을 확인하고 있습니다.</p><p id="area-scope">반경 조회로 모은 정류장입니다. 회의록의 여섯 거점과 일대일로 대응하는 목록은 아닙니다.</p><p id="map-error" role="alert"></p><button id="map-retry" class="secondary" hidden>지도 다시 연결</button><div id="real-map" aria-label="충무로 동국대 권역 실제 지도"></div><h3>여러 노선이 모이는 정류장</h3><p>정류장마다 서울시가 알려준 경유 노선 수입니다. 노선이 많다고 실제로 막힌다는 뜻은 아니며, 도착 관측으로 따로 확인해야 합니다.</p><div class="table-wrap"><table><thead><tr><th>정류장</th><th>ARS</th><th>노선 수</th><th>경유 노선</th></tr></thead><tbody id="busy-stops"></tbody></table></div>
-<h3>정류장을 가장 많이 함께 쓰는 노선 쌍</h3><p>이 권역 안에서 두 노선이 함께 서는 정류장 수입니다. 시간표가 겹치는지는 아직 계산하지 않았습니다. 배차간격은 기관이 제공한 계획값입니다.</p><div class="table-wrap"><table><thead><tr><th>노선 쌍</th><th>공유 정류장</th><th>배차간격(분)</th></tr></thead><tbody id="shared-pairs"></tbody></table></div>
-<details><summary>수집한 정류장 ID 확인</summary><ul id="station-list"></ul></details></section>
-<section class="math-grid results"><article class="panel"><h2>가장 가까운 거점의 영역</h2><p>보로노이는 각 지점에서 직선거리로 가장 가까운 거점의 영역을 나눕니다. 아래 좌표는 설명용이며 실제 보행권이 아닙니다.</p><svg id="voronoi" viewBox="0 0 560 390" role="img" aria-label="여섯 가상 거점의 직선거리 보로노이 영역"></svg><p>A 충무로역 · B 퇴계로5가 · C 동국대후문 인근 · D 동대입구역 · E 국립극장 · F 남산예장버스환승주차장<br>9/27 교육용 모형. 보행 분석에는 경사·횡단보도·출입구가 추가로 필요합니다.</p></article><article class="panel"><h2>회의록과 자료조사에서 출발하기</h2><label>회의록 거점 목록 <select id="hub-model"><option value="study-0923">9/23 실제 조사 범위</option><option value="illustration-0927">9/27 교육용 모형</option></select></label><p id="hub-note"></p><ol id="hub-list"></ol><h3>확인된 역사적 배경</h3><p><a href="https://mediahub.seoul.go.kr/archives/926688" target="_blank" rel="noopener noreferrer">서울시의 2015년 안내</a>에 노선 우회가 기록되어 있습니다. 이것만으로 현재 혼잡의 원인이 입증되지는 않습니다.</p><h3>추가로 검증할 가설</h3><p>463의 혼잡 기여도, 421 배차 변경, 현재 노선 중복의 영향은 날짜가 있는 노선·배차 자료와 현장 관측으로 확인해야 합니다.</p><p class="note">38→22의 경로 비용 감소는 가상 그래프 계산입니다. 실제 통행시간 42.1% 개선으로 발표하지 않습니다.</p></article></section></div><footer>정류장 ID·좌표·경유 노선은 서울시 API로 확인했습니다. 노선별 정차 순서·도로 형상·실제 도착 시각은 아직 검증 전입니다. 서비스 대상을 줄여 얻은 개선을 숨기지 않습니다. <span id="error" role="alert"></span></footer>
-</main><script type="module" src="/public/app.js"></script><script type="module" src="/public/research.js"></script><script type="module" src="/public/berths.js"></script><script type="module" src="/public/observation.js"></script></body></html>
+
+<aside class="panel" aria-label="시뮬레이션 조건">
+ <section><h2>정류장</h2><select id="berth-stop" aria-label="정류장"></select><p id="stop-note" class="hint"></p></section>
+
+ <section><h2>버스가 서는 방식</h2>
+  <div class="choices" role="radiogroup" aria-label="버스가 서는 방식">
+   <label><input type="radio" name="rule" value="single" checked><span><b>설 자리 1곳</b>모든 버스가 한 자리를 차례로 씁니다</span></label>
+   <label><input type="radio" name="rule" value="pooled"><span><b>설 자리 <em class="n-berths">여러</em>곳, 빈 곳 아무 데나</b>비어 있는 자리에 바로 섭니다</span></label>
+   <label><input type="radio" name="rule" value="colored"><span><b>설 자리 <em class="n-berths">여러</em>곳, 노선별 지정</b>같이 달리는 노선끼리 다른 자리를 받습니다</span></label>
+  </div></section>
+
+ <section><h2>버스가 오는 시점</h2>
+  <div class="choices" role="radiogroup" aria-label="버스가 오는 시점">
+   <label><input type="radio" name="timing" value="random" checked><span><b>지금처럼 제각각</b>노선마다 따로 출발합니다</span></label>
+   <label><input type="radio" name="timing" value="spread"><span><b>노선끼리 간격 두기</b>이 정류장에 노선이 번갈아 도착하도록 출발 시각을 맞춥니다(9/27 회의안)</span></label>
+  </div></section>
+
+ <section><h2>한 대가 서 있는 시간 <output id="berth-dwell-out">40초</output></h2>
+  <input id="berth-dwell" type="range" min="15" max="60" step="5" value="40" aria-label="한 대가 서 있는 시간"><p class="hint">승객이 많을수록 깁니다.</p></section>
+
+ <section><h2>2시간 돌렸을 때</h2>
+  <div class="table-wrap"><table><thead><tr><th>서는 방식</th><th>기다린 버스</th><th>기다린 시간 합</th><th>가장 긴 줄</th></tr></thead><tbody id="result-table"><tr><td colspan="4">계산 중…</td></tr></tbody></table></div>
+  <p id="result-note" class="hint"></p></section>
+
+ <details><summary>노선별 자리 배정 보기</summary>
+  <p class="hint">정류장을 여러 곳 함께 지나는 두 노선을 선으로 잇고, 이어진 노선끼리 다른 자리를 줍니다. 필요한 자리 수는 가능한 배정을 모두 따져 구한 최소값입니다.</p>
+  <ul id="assign-list" class="assign"></ul>
+  <svg id="conflict" viewBox="0 0 460 420" role="img" aria-label="함께 달리는 노선 연결 그림"></svg>
+  <label class="inline">함께 달린다고 볼 기준: 공유 정류장 <input id="berth-shared" type="range" min="2" max="5" value="3"><output id="berth-shared-out">3곳 이상</output></label>
+  <p id="coloring-note" class="hint"></p></details>
+
+ <details><summary>지금 실제 버스 겹쳐 보기</summary>
+  <label class="inline"><input id="live-toggle" type="checkbox"> 켜기</label>
+  <label class="inline">갱신 <select id="live-interval"><option value="10">10초</option><option value="15" selected>15초</option><option value="30">30초</option><option value="60">60초</option></select></label>
+  <p id="live-status" class="hint">서울시 버스는 약 20초마다 위치를 보냅니다. 하루 호출 한도(1,000회)가 있어 간격이 짧을수록 볼 수 있는 시간이 줄어듭니다.</p></details>
+
+ <details><summary>실제로 관측한 도착</summary>
+  <p id="obs-summary" class="hint">관측 자료를 불러오는 중입니다.</p>
+  <svg id="obs-strip" viewBox="0 0 720 110" role="img" aria-label="관측한 버스 통과 시각"></svg>
+  <p id="obs-note" class="hint"></p></details>
+
+ <footer class="hint"><span id="sim-source"></span> 버스 속도는 보통 정류장 정차까지 포함한 평균 시속 15km로, 차량 수는 노선 길이와 계획 배차간격으로 정했습니다. 줄은 고른 정류장에서만 계산합니다. 관광·심야 노선은 뺐습니다. <span id="sim-skipped"></span></footer>
+</aside>
+</main>
+<script type="module" src="/public/berths.js"></script><script type="module" src="/public/observation.js"></script>
+</body></html>

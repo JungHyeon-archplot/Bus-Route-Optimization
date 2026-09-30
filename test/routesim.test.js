@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {prepareRoute,positionAt,createSim,step} from '../src/routesim.js';
+import {prepareRoute,positionAt,createSim,step,runFor} from '../src/routesim.js';
 // A 2 km out-and-back line; the stop sits on the outbound leg only.
 const line=Array.from({length:21},(_,i)=>[37.56,127+i*0.00113]);
 const path=[...line,...line.slice(0,-1).reverse()];
@@ -27,4 +27,12 @@ test('one berth: two buses reaching the stop together are served one dwell apart
 test('bus count follows route length, speed and headway',()=>{
  const sim=createSim([prepareRoute(route('a',2))],{focus:'X',rule:'single',speed:10});
  assert.equal(sim.buses.length,Math.round(4000/(10*120)));
+});
+test('spread timing: equal-headway routes reach the stop k·H/K apart, so one berth never queues',()=>{
+ const preps=['a','b','c'].map(id=>prepareRoute(route(id,6)));
+ const random=runFor(preps,{focus:'X',rule:'single',speed:10,dwell:60,seed:2},3600);
+ const spread=runFor(preps,{focus:'X',rule:'single',speed:10,dwell:60,timing:'spread'},3600);
+ assert.ok(Math.abs(spread.served-random.served)<=3); // same buses; only where the 1-hour window cuts differs
+ assert.equal(spread.waited,0);
+ assert.ok(random.waited>0);
 });

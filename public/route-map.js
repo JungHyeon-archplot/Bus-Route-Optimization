@@ -1,8 +1,8 @@
 import {loadSdk} from '/public/map.js';
-import {prepareRoute,positionAt,createSim,step} from '/src/routesim.js';
+import {prepareRoute,positionAt,createSim,step,runFor} from '/src/routesim.js';
 const $=id=>document.getElementById(id);
 const GREY='#7b858c';
-let liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',playing=false,rate=30,last=0,liveTimer;
+let liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',timing='random',tableTimer,playing=false,rate=30,last=0,liveTimer;
 
 function clear(list){for(const item of list)item.setMap(null);list.length=0;}
 function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
@@ -10,7 +10,7 @@ function dot(className,color,title){const el=document.createElement('span');el.c
 function rebuildSim(){
  const {focus,routeIds,assignment,colors,dwell,palette}=params;
  const list=routeIds.map(id=>preps.get(id)).filter(Boolean);
- sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed:1});
+ sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed:1,timing});
  clear(busOverlays);
  for(const bus of sim.buses){
   const color=rule==='colored'?palette[assignment[bus.route]]:GREY;
@@ -22,6 +22,21 @@ function rebuildSim(){
  const skipped=list.filter(prep=>prep.stopAt[focus]===undefined).map(prep=>prep.route.name);
  $('sim-skipped').textContent=skipped.length?`${skipped.join(', ')}번은 이 정류장 위치를 경로에 맞추지 못해 움직이기만 하고 줄 계산에서는 빠집니다.`:'';
  draw();
+ clearTimeout(tableTimer);tableTimer=setTimeout(()=>renderTable(list),30);
+}
+
+// Same simulation, run headless for 2 hours under each way of stopping, so the table matches what the map shows.
+function renderTable(list){
+ const {focus,assignment,colors,dwell}=params,body=$('result-table');
+ const rows=[['single','설 자리 1곳'],['pooled',`${colors}곳, 빈 곳 아무 데나`],['colored',`${colors}곳, 노선별 지정`]];
+ body.replaceChildren();
+ for(const [key,label] of rows){
+  const s=runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed:1,timing});
+  const tr=document.createElement('tr');if(key===rule)tr.className='current';
+  for(const value of [label,`${s.waited}대 / ${s.served}대`,`${Math.round(s.totalWait/60)}분 ${Math.round(s.totalWait%60)}초`,`${s.maxQueue}대`]){const td=document.createElement('td');td.textContent=value;tr.append(td);}
+  body.append(tr);
+ }
+ $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, 난수 seed 1. 굵은 줄이 지도에서 보고 있는 조건입니다.`;
 }
 
 function draw(){
@@ -30,8 +45,8 @@ function draw(){
   bus.el.classList.toggle('queued',bus.state==='queue');
  }
  const {served,waited,totalWait}=sim.stats;
- $('sim-clock').textContent=`${Math.floor(sim.time/60)}분 경과`;
- $('sim-stats').textContent=`정류장에 선 버스 ${served}대 · 기다린 버스 ${waited}대 · 누적 대기 ${Math.round(totalWait)}초 · 지금 줄 ${sim.queue.length}대`;
+ $('sim-clock').textContent=`${Math.floor(sim.time/60)}분`;
+ $('sim-stats').textContent=`이 정류장에 선 버스 ${served}대 · 기다린 버스 ${waited}대 · 지금 줄 ${sim.queue.length}대`;
 }
 
 function frame(now){
@@ -73,7 +88,9 @@ export async function updateRouteMap(next){
    if(!config.kakaoJsKey)throw new Error('지도 키가 설정되지 않았습니다.');
    await loadSdk(config.kakaoJsKey);maps=window.kakao.maps;routesData=data;
    for(const route of data.routes)preps.set(route.id,prepareRoute(route));
-   map=new maps.Map($('route-map'),{center:new maps.LatLng(37.56,126.995),level:5});
+   map=new maps.Map($('route-map'),{center:new maps.LatLng(37.56,126.995),level:4});
+   map.addControl(new maps.ZoomControl(),maps.ControlPosition.RIGHT);
+   addEventListener('resize',()=>{map.relayout();map.setCenter(new maps.LatLng(params.stop.lat,params.stop.lng));});
    $('route-map-error').textContent='';
   }
   clear(layers);
@@ -85,16 +102,15 @@ export async function updateRouteMap(next){
   const label=document.createElement('span');label.className='focus-stop';label.textContent=stop.name;
   layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,yAnchor:1.6,zIndex:5}));
   layers.push(new maps.Circle({map,center:new maps.LatLng(stop.lat,stop.lng),radius:40,strokeWeight:2,strokeColor:'#1d2328',fillColor:'#ffb000',fillOpacity:.9}));
-  map.setCenter(new maps.LatLng(stop.lat,stop.lng));map.setLevel(4);
+  map.relayout();map.setCenter(new maps.LatLng(stop.lat,stop.lng));map.setLevel(4);
   $('sim-source').textContent=`노선 경로·정류장 순서: 서울시 노선정보조회, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
   rebuildSim();
   if(liveTimer)refreshLive();
- }catch(error){$('route-map-error').textContent=error.message+' 아래 표와 그래프는 계속 볼 수 있습니다.';}
+ }catch(error){$('route-map-error').textContent=error.message+' 오른쪽 결과표는 계속 볼 수 있습니다.';}
 }
 
-for(const button of document.querySelectorAll('[data-rule]'))button.addEventListener('click',()=>{
- rule=button.dataset.rule;
- for(const other of document.querySelectorAll('[data-rule]'))other.setAttribute('aria-pressed',String(other===button));
+for(const input of document.querySelectorAll('input[name=rule],input[name=timing]'))input.addEventListener('change',()=>{
+ rule=document.querySelector('input[name=rule]:checked').value;timing=document.querySelector('input[name=timing]:checked').value;
  if(sim)rebuildSim();
 });
 $('sim-play').addEventListener('click',()=>{

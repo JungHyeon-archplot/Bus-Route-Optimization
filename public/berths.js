@@ -1,12 +1,10 @@
 import {overlapSummary} from '/src/network.js';
 import {conflictGraph,colorGraph,NON_DAYTIME} from '/src/coloring.js';
-import {compareBerths} from '/src/berth.js';
 import {updateRouteMap} from '/public/route-map.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 const berthColors=['#2f6fde','#e0523c','#1e9e6a','#8a5cd1','#c98a00','#0f8fa8','#b8467e','#5e6b78'];
 const letter=i=>String.fromCharCode(65+i);
 const svg=(tag,attrs,text='')=>{const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);el.textContent=text;return el;};
-const seconds=value=>value<0.05?'0초':value.toFixed(1)+'초';
 let dataset;
 
 function drawGraph({nodes,edges},assignment){
@@ -15,25 +13,21 @@ function drawGraph({nodes,edges},assignment){
  nodes.forEach((node,i)=>{const a=-Math.PI/2+i*2*Math.PI/nodes.length;pos.set(node.id,{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)});});
  for(const {a,b,shared} of edges){const p=pos.get(a),q=pos.get(b);box.append(svg('line',{x1:p.x,y1:p.y,x2:q.x,y2:q.y,class:'edge','stroke-width':Math.min(1+shared/2,5)}));}
  for(const node of nodes){
-  const p=pos.get(node.id),c=assignment[node.id];
-  const g=svg('g',{class:'node'});
+  const p=pos.get(node.id),c=assignment[node.id],g=svg('g',{class:'node'});
   g.append(svg('circle',{cx:p.x,cy:p.y,r:24,fill:berthColors[c]}));
   g.append(svg('text',{x:p.x,y:p.y+5,'text-anchor':'middle'},node.name));
-  g.append(svg('title',{},`${node.name} · 정차면 ${letter(c)}`));
+  g.append(svg('title',{},`${node.name}번 · 자리 ${letter(c)}`));
   box.append(g);
  }
 }
 
-function drawBoard(stop,nodes,assignment,colors){
- $('bis-stop').textContent=`${stop.name} ${stop.arsId}`;
- const rows=$('bis-rows');rows.replaceChildren();
+function drawAssignments(nodes,assignment){
+ const list=$('assign-list');list.replaceChildren();
  for(const route of [...nodes].sort((a,b)=>assignment[a.id]-assignment[b.id]||a.name.localeCompare(b.name,'ko',{numeric:true}))){
-  const li=document.createElement('li'),badge=document.createElement('span'),name=document.createElement('strong'),to=document.createElement('span');
+  const li=document.createElement('li'),badge=document.createElement('span');
   badge.className='berth';badge.style.background=berthColors[assignment[route.id]];badge.textContent=letter(assignment[route.id]);
-  name.textContent=route.name;to.textContent=route.end?route.end+' 방면':'';
-  li.append(name,to,badge);rows.append(li);
+  li.append(badge,`${route.name}번${route.end?' · '+route.end+' 방면':''}`);list.append(li);
  }
- $('bis-foot').textContent=`노선 ${nodes.length}개 · 정차면 ${colors}개 필요${colors>4?' · 네 색으로는 부족':''}`;
 }
 
 function render(){
@@ -41,44 +35,24 @@ function render(){
  $('berth-shared-out').textContent=minShared+'곳 이상';$('berth-dwell-out').textContent=dwell+'초';
  const graph=conflictGraph(dataset,arsId,{minShared});
  const {colors,assignment}=colorGraph(graph.nodes,graph.edges);
- drawGraph(graph,assignment);drawBoard(graph.stop,graph.nodes,assignment,colors);
+ for(const el of document.querySelectorAll('.n-berths'))el.textContent=colors;
+ $('stop-note').textContent=`이 정류장에 서는 주간 노선 ${graph.nodes.length}개`;
+ drawGraph(graph,assignment);drawAssignments(graph.nodes,assignment);
  $('coloring-note').textContent=colors>4
-  ?`이 정류장은 최소 ${colors}색이 필요합니다. 서로 모두 이어진 노선 묶음이 있어 네 색으로는 칠할 수 없습니다.`
-  :`이 정류장은 ${colors}색이면 충분합니다. 더 적은 색으로는 이어진 두 노선이 같은 색이 됩니다.`;
+  ?`이 정류장은 자리가 최소 ${colors}곳 필요합니다. 서로 모두 이어진 노선 묶음이 있어 4곳(네 가지 색)으로는 나눌 수 없습니다.`
+  :`이 정류장은 자리 ${colors}곳이면 나눌 수 있습니다.`;
  updateRouteMap({stop:graph.stop,focus:arsId,routeIds:graph.nodes.map(node=>node.id),assignment,colors,dwell,palette:berthColors});
- const result=compareBerths(graph.nodes,assignment,colors,{seed:1,dwell});
- $('berth-context').textContent=`2시간 동안 도착하는 버스 ${result.arrivals}대를 세 규칙에 똑같이 넣었습니다.`;
- const body=$('berth-table');body.replaceChildren();
- for(const [label,r] of [['정차면 1개, 모든 노선',result.single],[`정차면 ${result.berths}개, 빈 곳 아무 데나`,result.pooled],[`정차면 ${result.berths}개, 색별로 지정`,result.colored]]){
-  const tr=document.createElement('tr');
-  for(const value of [label,`${r.delayed}대`,seconds(r.meanWait),seconds(r.maxWait),`${r.maxQueue}대`]){const td=document.createElement('td');td.textContent=value;tr.append(td);}
-  body.append(tr);
- }
 }
 
-function renderFacts(){
- const {busiestStops,sharedPairs}=overlapSummary(dataset),top=busiestStops[0],pair=sharedPairs[0];
- const collected=new Date(dataset.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium'});
- const facts=[[`${dataset.stops.length}개`,`반경 ${dataset.query?.radiusMeters??''}m 안 승차 정류장`],[`${dataset.routes.length}개`,'이 정류장들을 지나는 노선'],
-  [`${top.routes.length}개`,`${top.stop.name}에 서는 노선`],[`${pair.sharedStops}곳`,`${pair.a.name}번과 ${pair.b.name}번이 함께 서는 정류장`]];
- const list=$('facts');list.replaceChildren();
- for(const [value,label] of facts){const div=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dd.textContent=value;dt.textContent=label;div.append(dd,dt);list.append(div);}
- const note=document.createElement('p');note.className='fine';note.textContent=`서울시 정류소정보조회·노선정보조회 API, ${collected} 수집.`;list.after(note);
+try{
+ const response=await fetch('/stations.json');if(!response.ok)throw new Error();
+ dataset=await response.json();
+ if(!dataset.routes?.length)throw new Error();
+ const select=$('berth-stop');
+ const busy=overlapSummary(dataset).busiestStops.filter(({routes})=>routes.filter(route=>!NON_DAYTIME.has(route.typeCode)).length>=3).slice(0,12);
+ for(const {stop,routes} of busy)select.append(new Option(`${stop.name} (${stop.arsId}) · 노선 ${routes.length}개`,stop.arsId));
+ for(const id of ['berth-stop','berth-shared','berth-dwell'])$(id).addEventListener('input',render);
+ render();
+}catch{
+ $('stop-note').textContent='경유 노선 자료가 없습니다. npm run collect:area 로 먼저 수집하세요.';
 }
-async function init(){
- try{
-  const response=await fetch('/stations.json');if(!response.ok)throw new Error();
-  dataset=await response.json();
-  if(!dataset.routes?.length)throw new Error();
-  renderFacts();
-  const select=$('berth-stop');
-  const busy=overlapSummary(dataset).busiestStops.filter(({routes})=>routes.filter(route=>!NON_DAYTIME.has(route.typeCode)).length>=3).slice(0,12);
-  for(const {stop,routes} of busy)select.append(new Option(`${stop.name} (${stop.arsId}) · ${routes.length}개 노선`,stop.arsId));
-  for(const id of ['berth-stop','berth-shared','berth-dwell'])$(id).addEventListener('input',render);
-  render();
- }catch{
-  $('bis-stop').textContent='정류장 자료 없음';
-  $('berth-context').textContent='경유 노선 자료가 없습니다. npm run collect:area 로 먼저 수집하세요.';
- }
-}
-init();

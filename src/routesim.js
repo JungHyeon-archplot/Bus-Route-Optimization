@@ -30,11 +30,19 @@ export function positionAt(prep,s){
 }
 
 // rule: 'single' | 'pooled' | 'colored'
-export function createSim(preps,{focus,rule,assignment={},berths=1,speed=15/3.6,dwell=25,seed=1}){
+// timing: 'random' = each route starts at an unrelated phase (today's situation);
+//         'spread' = the team's 9/27 idea: route k first reaches the focus stop at k·H/K (H = mean headway, K = routes), like 0·4·8 min.
+export function createSim(preps,{focus,rule,assignment={},berths=1,speed=15/3.6,dwell=25,seed=1,timing='random'}){
  const random=rng(seed),buses=[];
+ const snapped=preps.filter(prep=>prep.stopAt[focus]!==undefined).map(prep=>prep.route.id).sort();
+ const meanHeadway=snapped.length?preps.filter(prep=>snapped.includes(prep.route.id)).reduce((sum,prep)=>sum+(prep.route.termMinutes??10)*60,0)/snapped.length:0;
  for(const prep of preps){
   const f=prep.stopAt[focus];
-  const headway=(prep.route.termMinutes??10)*60,n=Math.max(1,Math.round(prep.length/(speed*headway))),gap=prep.length/n,phase=random()*gap;
+  const headway=(prep.route.termMinutes??10)*60,n=Math.max(1,Math.round(prep.length/(speed*headway))),gap=prep.length/n;
+  const k=snapped.indexOf(prep.route.id);
+  const phase=timing==='spread'&&k>=0
+   ?((f-speed*(k*meanHeadway/snapped.length))%gap+gap)%gap
+   :random()*gap;
   for(let i=0;i<n;i++){
    const u=phase+i*gap;
    buses.push({route:prep.route.id,prep,u,state:'run',next:f===undefined?Infinity:f+Math.ceil((u-f)/prep.length)*prep.length});
@@ -74,4 +82,11 @@ export function step(sim,dt){
  }
  sim.stats.maxQueue=Math.max(sim.stats.maxQueue,sim.queue.length);
  return sim;
+}
+
+// Runs the same scenario headless for `seconds` and returns the stats.
+export function runFor(preps,options,seconds=7200){
+ const sim=createSim(preps,options);
+ for(let t=0;t<seconds;t++)step(sim,1);
+ return sim.stats;
 }
