@@ -2,7 +2,10 @@ import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),{kakaoJsKey=process.env.KAKAO_MAP_JS_KEY||''}={}) {
+import {request} from './collect.mjs';
+export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),{kakaoJsKey=process.env.KAKAO_MAP_JS_KEY||'',fetchPositions=routeId=>request('buspos/getBusPosByRtid',{busRouteId:routeId})}={}) {
+  const liveCache=new Map(); // routeId → {at, body}; 30 s keeps a page left open far under the 1,000/day quota
+  let allowed;
   const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8'};
   return http.createServer(async(req,res)=>{
     const pathname=new URL(req.url,'http://localhost').pathname;
@@ -11,8 +14,24 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
       res.writeHead(200,{'Content-Type':mime['.json'],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
       return res.end(req.method==='HEAD'?undefined:JSON.stringify({kakaoJsKey}));
     }
+    if(pathname==='/live/buspos'){
+      const routeId=new URL(req.url,'http://localhost').searchParams.get('routeId')||'';
+      allowed??=new Set(JSON.parse(await readFile(path.join(root,'data/public/routes.json'),'utf8').catch(()=>'{"routes":[]}')).routes.map(route=>route.id));
+      const json=(code,body)=>{res.writeHead(code,{'Content-Type':mime['.json'],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:JSON.stringify(body));};
+      if(!allowed.has(routeId))return json(404,{error:'수집한 노선만 조회할 수 있습니다.'});
+      const hit=liveCache.get(routeId);
+      if(hit&&Date.now()-hit.at<30000)return json(200,hit.body);
+      try{
+        const response=await fetchPositions(routeId);
+        const buses=(response.msgBody?.itemList??[]).map(item=>({vehId:item.vehId,plainNo:item.plainNo,lat:Number(item.gpsY),lng:Number(item.gpsX),dataTm:item.dataTm,stopFlag:item.stopFlag==='1'}))
+          .filter(bus=>Number.isFinite(bus.lat)&&Number.isFinite(bus.lng));
+        const body={routeId,fetchedAt:new Date().toISOString(),buses};
+        liveCache.set(routeId,{at:Date.now(),body});return json(200,body);
+      }catch(error){return json(502,{error:'서울시 버스위치 API 응답을 받지 못했습니다.'});}
+    }
     const file=pathname==='/'?'public/index.html':
       pathname==='/stations.json'?'data/public/stations.json':
+      pathname==='/routes.json'?'data/public/routes.json':
       pathname==='/hub-models.json'?'data/reference/hub-models.json':
       /^\/(?:public|src)\/[A-Za-z0-9_-]+\.(?:js|css)$/.test(pathname)?pathname.slice(1):null;
     if(!file){res.writeHead(404);return res.end('Not found');}

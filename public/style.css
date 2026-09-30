@@ -61,6 +61,22 @@ td{font-variant-numeric:tabular-nums}
 #berth-table tr:last-child td{background:#f6f8fb;font-weight:500}
 .note{font-size:13px!important;padding-top:6px}
 
+/* Route map simulation. */
+.route-sim{margin-bottom:20px}
+.sim-controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:14px 0}
+.sim-controls [role=group]{display:inline-flex}
+.sim-controls [role=group] button{border-radius:0;margin-left:-1px}
+.sim-controls [role=group] button:first-child{border-radius:var(--radius-sm) 0 0 var(--radius-sm);margin-left:0}
+.sim-controls [role=group] button:last-child{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.sim-controls [aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+#route-map{height:520px;background:#e4e8e5;border-radius:var(--radius-sm)}
+#sim-stats{font-weight:500;color:var(--ink)!important;font-variant-numeric:tabular-nums}
+#route-map-error{color:#a3321f!important}
+.bus-dot{display:block;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.bus-dot.queued{border-color:#d62d20;box-shadow:0 0 0 2px #d62d20;width:14px;height:14px}
+.live-dot{display:block;width:11px;height:11px;border-radius:2px;border:2px solid #1d2328;transform:rotate(45deg)}
+.focus-stop{display:block;background:var(--asphalt);color:var(--amber);font-weight:700;font-size:13px;padding:4px 8px;border-radius:var(--radius-sm);white-space:nowrap}
+
 /* Existing simulator and field views. */
 .intro{margin-bottom:6px}
 .maps,.math-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -83,6 +99,7 @@ footer{font-size:13px;color:var(--muted);padding:26px 0;line-height:1.8}
 [hidden]{display:none!important}
 
 @media (max-width:900px){
+ #route-map{height:420px}
  .masthead{grid-template-columns:1fr;gap:28px;padding:32px 16px 56px}
  .berth-grid,.maps,.math-grid{grid-template-columns:1fr}
  #metrics{grid-template-columns:1fr}

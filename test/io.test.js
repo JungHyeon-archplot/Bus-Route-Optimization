@@ -40,3 +40,19 @@ test('JSON collection checks agency status and sets resultType',async()=>{
  await assert.rejects(()=>collect('stations','충무로',{key:'secret',format:'json',fetchImpl:async()=>({ok:true,text:async()=>'{"msgHeader":{"headerCd":"7"}}'})}),/기관 오류/);
 });
 
+test('live position proxy only serves collected routes, strips the key and caches',async()=>{
+ const {mkdtemp,mkdir,writeFile}=await import('node:fs/promises');const os=await import('node:os');const path=await import('node:path');
+ const root=await mkdtemp(path.join(os.tmpdir(),'bro-'));await mkdir(path.join(root,'data/public'),{recursive:true});
+ await writeFile(path.join(root,'data/public/routes.json'),JSON.stringify({routes:[{id:'100100063'}]}));
+ let calls=0;
+ const server=createServer(root,{fetchPositions:async()=>{calls++;return {msgBody:{itemList:[{vehId:'1',plainNo:'서울70사1',gpsX:'127.0',gpsY:'37.5',dataTm:'20260930103612',stopFlag:'0'}]}};}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{
+  const base='http://127.0.0.1:'+server.address().port;
+  assert.equal((await fetch(base+'/live/buspos?routeId=999999999')).status,404);
+  const first=await (await fetch(base+'/live/buspos?routeId=100100063')).json();
+  await fetch(base+'/live/buspos?routeId=100100063');
+  assert.deepEqual(first.buses,[{vehId:'1',plainNo:'서울70사1',lat:37.5,lng:127,dataTm:'20260930103612',stopFlag:false}]);
+  assert.equal(calls,1);assert.ok(!JSON.stringify(first).includes('serviceKey'));
+ }finally{await new Promise(r=>server.close(r));}
+});

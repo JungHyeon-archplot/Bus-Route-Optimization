@@ -1,0 +1,100 @@
+import {loadSdk} from '/public/map.js';
+import {prepareRoute,positionAt,createSim,step} from '/src/routesim.js';
+const $=id=>document.getElementById(id);
+const GREY='#7b858c';
+let maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',playing=false,rate=30,last=0,liveTimer;
+
+function clear(list){for(const item of list)item.setMap(null);list.length=0;}
+function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
+
+function rebuildSim(){
+ const {focus,routeIds,assignment,colors,dwell,palette}=params;
+ const list=routeIds.map(id=>preps.get(id)).filter(Boolean);
+ sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed:1});
+ clear(busOverlays);
+ for(const bus of sim.buses){
+  const color=rule==='colored'?palette[assignment[bus.route]]:GREY;
+  const el=dot('bus-dot',color,bus.prep.route.name);
+  bus.el=el;
+  const overlay=new maps.CustomOverlay({position:new maps.LatLng(...positionAt(bus.prep,bus.u)),content:el,xAnchor:.5,yAnchor:.5,zIndex:3});
+  overlay.setMap(map);bus.overlay=overlay;busOverlays.push(overlay);
+ }
+ const skipped=list.filter(prep=>prep.stopAt[focus]===undefined).map(prep=>prep.route.name);
+ $('sim-skipped').textContent=skipped.length?`${skipped.join(', ')}번은 이 정류장 위치를 경로에 맞추지 못해 움직이기만 하고 줄 계산에서는 빠집니다.`:'';
+ draw();
+}
+
+function draw(){
+ for(const bus of sim.buses){
+  bus.overlay.setPosition(new maps.LatLng(...positionAt(bus.prep,bus.u)));
+  bus.el.classList.toggle('queued',bus.state==='queue');
+ }
+ const {served,waited,totalWait}=sim.stats;
+ $('sim-clock').textContent=`${Math.floor(sim.time/60)}분 경과`;
+ $('sim-stats').textContent=`정류장에 선 버스 ${served}대 · 기다린 버스 ${waited}대 · 누적 대기 ${Math.round(totalWait)}초 · 지금 줄 ${sim.queue.length}대`;
+}
+
+function frame(now){
+ if(!playing)return;
+ const elapsed=Math.min(0.25,(now-(last||now))/1000)*rate;last=now;
+ for(let t=0;t<elapsed;t+=1)step(sim,Math.min(1,elapsed-t));
+ draw();requestAnimationFrame(frame);
+}
+
+async function refreshLive(){
+ clear(liveOverlays);
+ const results=await Promise.all(params.routeIds.map(id=>fetch('/live/buspos?routeId='+id).then(r=>r.ok?r.json():null).catch(()=>null)));
+ let count=0,stamp='';
+ for(const result of results.filter(Boolean)){
+  const name=preps.get(result.routeId)?.route.name??'';
+  for(const bus of result.buses){
+   const overlay=new maps.CustomOverlay({position:new maps.LatLng(bus.lat,bus.lng),content:dot('live-dot',params.palette[params.assignment[result.routeId]]??GREY,`${name}번 ${bus.plainNo}`),xAnchor:.5,yAnchor:.5,zIndex:4});
+   overlay.setMap(map);liveOverlays.push(overlay);count++;stamp=result.fetchedAt;
+  }
+ }
+ $('live-status').textContent=count?`실제 버스 ${count}대 · ${new Date(stamp).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul'})} 기준 · 30초마다 갱신`:'실시간 위치를 받지 못했습니다. 잠시 뒤 다시 켜 보세요.';
+}
+
+export async function updateRouteMap(next){
+ params=next;
+ try{
+  if(!map){
+   const [config,data]=await Promise.all([fetch('/config.json').then(r=>r.json()),fetch('/routes.json').then(r=>{if(!r.ok)throw new Error('노선 경로 자료가 없습니다. npm run collect:routes 로 먼저 수집하세요.');return r.json();})]);
+   if(!config.kakaoJsKey)throw new Error('지도 키가 설정되지 않았습니다.');
+   await loadSdk(config.kakaoJsKey);maps=window.kakao.maps;routesData=data;
+   for(const route of data.routes)preps.set(route.id,prepareRoute(route));
+   map=new maps.Map($('route-map'),{center:new maps.LatLng(37.56,126.995),level:5});
+   $('route-map-error').textContent='';
+  }
+  clear(layers);
+  const stop=params.stop;
+  for(const id of params.routeIds){
+   const route=preps.get(id)?.route;if(!route)continue;
+   layers.push(new maps.Polyline({map,path:route.path.map(([lat,lng])=>new maps.LatLng(lat,lng)),strokeWeight:4,strokeColor:params.palette[params.assignment[id]],strokeOpacity:.45}));
+  }
+  const label=document.createElement('span');label.className='focus-stop';label.textContent=stop.name;
+  layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,yAnchor:1.6,zIndex:5}));
+  layers.push(new maps.Circle({map,center:new maps.LatLng(stop.lat,stop.lng),radius:40,strokeWeight:2,strokeColor:'#1d2328',fillColor:'#ffb000',fillOpacity:.9}));
+  map.setCenter(new maps.LatLng(stop.lat,stop.lng));map.setLevel(4);
+  $('sim-source').textContent=`노선 경로·정류장 순서: 서울시 노선정보조회, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
+  rebuildSim();
+  if(liveTimer)refreshLive();
+ }catch(error){$('route-map-error').textContent=error.message+' 아래 표와 그래프는 계속 볼 수 있습니다.';}
+}
+
+for(const button of document.querySelectorAll('[data-rule]'))button.addEventListener('click',()=>{
+ rule=button.dataset.rule;
+ for(const other of document.querySelectorAll('[data-rule]'))other.setAttribute('aria-pressed',String(other===button));
+ if(sim)rebuildSim();
+});
+$('sim-play').addEventListener('click',()=>{
+ if(!sim)return;
+ playing=!playing;$('sim-play').textContent=playing?'멈춤':'재생';
+ if(playing){last=0;requestAnimationFrame(frame);}
+});
+$('sim-reset').addEventListener('click',()=>{if(sim)rebuildSim();});
+$('sim-rate').addEventListener('input',event=>{rate=Number(event.target.value);});
+$('live-toggle').addEventListener('change',event=>{
+ clearInterval(liveTimer);liveTimer=undefined;clear(liveOverlays);$('live-status').textContent='';
+ if(event.target.checked&&map){refreshLive();liveTimer=setInterval(refreshLive,30000);}
+});

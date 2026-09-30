@@ -1,6 +1,7 @@
 import {overlapSummary} from '/src/network.js';
 import {conflictGraph,colorGraph,NON_DAYTIME} from '/src/coloring.js';
 import {compareBerths} from '/src/berth.js';
+import {updateRouteMap} from '/public/route-map.js';
 const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 const berthColors=['#2f6fde','#e0523c','#1e9e6a','#8a5cd1','#c98a00','#0f8fa8','#b8467e','#5e6b78'];
 const letter=i=>String.fromCharCode(65+i);
@@ -44,6 +45,7 @@ function render(){
  $('coloring-note').textContent=colors>4
   ?`이 정류장은 최소 ${colors}색이 필요합니다. 서로 모두 이어진 노선 묶음이 있어 네 색으로는 칠할 수 없습니다.`
   :`이 정류장은 ${colors}색이면 충분합니다. 더 적은 색으로는 이어진 두 노선이 같은 색이 됩니다.`;
+ updateRouteMap({stop:graph.stop,focus:arsId,routeIds:graph.nodes.map(node=>node.id),assignment,colors,dwell,palette:berthColors});
  const result=compareBerths(graph.nodes,assignment,colors,{seed:1,dwell});
  $('berth-context').textContent=`2시간 동안 도착하는 버스 ${result.arrivals}대를 세 규칙에 똑같이 넣었습니다.`;
  const body=$('berth-table');body.replaceChildren();

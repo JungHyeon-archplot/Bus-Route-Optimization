@@ -1,5 +1,5 @@
 let sdkPromise;
-function loadSdk(key){
+export function loadSdk(key){
  if(window.kakao?.maps?.Map)return Promise.resolve();
  if(sdkPromise)return sdkPromise;
  sdkPromise=new Promise((resolve,reject)=>{

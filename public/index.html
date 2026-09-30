@@ -7,6 +7,14 @@
 <main><nav class="view-tabs" role="tablist" aria-label="화면 선택"><button id="tab-berth" role="tab" aria-selected="true" aria-controls="berth-view">정차면 나누기</button><button id="tab-simulation" role="tab" aria-selected="false" aria-controls="simulation-view" tabindex="-1">출발 시간 나누기</button><button id="tab-field" role="tab" aria-selected="false" aria-controls="field-view" tabindex="-1">실제 지역 자료</button></nav>
 <div id="berth-view" role="tabpanel" aria-labelledby="tab-berth">
 <section class="controls" aria-label="정차면 실험 설정"><label>정류장 <select id="berth-stop"></select></label><label>함께 달린다고 볼 공유 정류장 <input id="berth-shared" type="range" min="2" max="5" value="3"><output id="berth-shared-out">3곳 이상</output></label><label>버스 한 대 정차 시간 <input id="berth-dwell" type="range" min="15" max="60" step="5" value="25"><output id="berth-dwell-out">25초</output></label></section>
+<section class="panel route-sim"><div class="panel-title"><h2>실제 노선 위에서 움직여 보기</h2><span id="sim-clock">0분 경과</span></div>
+<p>선은 서울시가 제공한 실제 노선 경로이고, 점 하나가 버스 한 대입니다. 노란 원 정류장에서만 정차면 줄을 계산합니다. 빨간 테두리는 정차면이 비기를 기다리는 버스입니다.</p>
+<div class="sim-controls"><div role="group" aria-label="정차 규칙"><button data-rule="single" aria-pressed="true" class="secondary">정차면 1개</button><button data-rule="pooled" aria-pressed="false" class="secondary">빈 곳 아무 데나</button><button data-rule="colored" aria-pressed="false" class="secondary">색별로 지정</button></div>
+<button id="sim-play">재생</button><button id="sim-reset" class="secondary">처음으로</button><label>배속 <select id="sim-rate"><option value="10">10배</option><option value="30" selected>30배</option><option value="90">90배</option></select></label>
+<label class="live"><input id="live-toggle" type="checkbox"> 지금 실제 버스 위치 겹쳐 보기</label></div>
+<p id="route-map-error" role="alert"></p><div id="route-map" aria-label="실제 노선 경로 위 버스 시뮬레이션 지도"></div>
+<p id="sim-stats" role="status"></p><p id="live-status" class="fine"></p>
+<p class="fine"><span id="sim-source"></span> 버스 속도는 일반 정류장 정차를 포함한 평균 시속 15km로 가정했고, 차량 수는 노선 길이·속도·계획 배차간격으로 정했습니다. 네모 점은 버스위치정보 API의 실제 위치입니다. <span id="sim-skipped"></span></p></section>
 <div class="berth-grid"><section class="panel"><h2>함께 달리는 노선끼리 선으로 잇기</h2><p>선으로 이어진 두 노선은 이 권역에서 정류장을 여러 곳 함께 지나 같이 도착하기 쉽습니다. 이어진 노선끼리 다른 색을 주면, 같은 색 노선이 한 정차면을 씁니다.</p><svg id="conflict" viewBox="0 0 460 420" role="img" aria-label="노선 충돌 그래프"></svg><p id="coloring-note" class="callout"></p></section>
 <section class="panel"><h2>같은 도착, 세 가지 정차 규칙</h2><p id="berth-context"></p><div class="table-wrap"><table><thead><tr><th>규칙</th><th>기다린 버스</th><th>평균 대기</th><th>최대 대기</th><th>최대 줄</th></tr></thead><tbody id="berth-table"></tbody></table></div><p class="note">같은 색 규칙은 정차면 수만 늘린 경우보다 버스 대기가 길 수 있습니다. 색 배정의 장점은 승객이 탈 곳을 미리 알고, 앞차에 막혀 못 나가는 일이 줄어드는 데서 기대하는데, 이 두 가지는 아직 이 계산에 넣지 않았습니다.</p>
 <h3>계산 조건</h3><p class="fine">노선별 배차간격은 서울시가 제공한 계획값이고, 도착 시각은 그 간격에 ±90초 흔들림을 준 모의값입니다(난수 seed 1, 2시간). 실제 도착 관측이 아닙니다. 관광·심야 노선은 제외했습니다.</p></section></div>
