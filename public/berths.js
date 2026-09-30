@@ -56,11 +56,21 @@ function render(){
  }
 }
 
+function renderFacts(){
+ const {busiestStops,sharedPairs}=overlapSummary(dataset),top=busiestStops[0],pair=sharedPairs[0];
+ const collected=new Date(dataset.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium'});
+ const facts=[[`${dataset.stops.length}개`,`반경 ${dataset.query?.radiusMeters??''}m 안 승차 정류장`],[`${dataset.routes.length}개`,'이 정류장들을 지나는 노선'],
+  [`${top.routes.length}개`,`${top.stop.name}에 서는 노선`],[`${pair.sharedStops}곳`,`${pair.a.name}번과 ${pair.b.name}번이 함께 서는 정류장`]];
+ const list=$('facts');list.replaceChildren();
+ for(const [value,label] of facts){const div=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dd.textContent=value;dt.textContent=label;div.append(dd,dt);list.append(div);}
+ const note=document.createElement('p');note.className='fine';note.textContent=`서울시 정류소정보조회·노선정보조회 API, ${collected} 수집.`;list.after(note);
+}
 async function init(){
  try{
   const response=await fetch('/stations.json');if(!response.ok)throw new Error();
   dataset=await response.json();
   if(!dataset.routes?.length)throw new Error();
+  renderFacts();
   const select=$('berth-stop');
   const busy=overlapSummary(dataset).busiestStops.filter(({routes})=>routes.filter(route=>!NON_DAYTIME.has(route.typeCode)).length>=3).slice(0,12);
   for(const {stop,routes} of busy)select.append(new Option(`${stop.name} (${stop.arsId}) · ${routes.length}개 노선`,stop.arsId));

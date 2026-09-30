@@ -50,8 +50,6 @@ output{font-variant-numeric:tabular-nums;font-size:14px;min-width:5em}
 #conflict .node text{fill:#fff;font-size:14px;font-weight:700;paint-order:stroke;stroke:rgba(0,0,0,.25);stroke-width:2px}
 .callout{background:#fff6e0;border-left:4px solid var(--amber);padding:10px 14px;color:var(--ink)!important}
 .fine{font-size:13px!important}
-.origin{margin-top:20px}
-.origin p{font-size:15px;color:var(--ink)}
 
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -61,8 +59,32 @@ td{font-variant-numeric:tabular-nums}
 #berth-table tr:last-child td{background:#f6f8fb;font-weight:500}
 .note{font-size:13px!important;padding-top:6px}
 
+/* Story chapters: the number plate is the presentation order. */
+.chapter{display:grid;grid-template-columns:56px minmax(0,1fr);gap:0 22px;padding:36px 0;border-top:1px solid var(--line)}
+.chapter:first-child{border-top:0;padding-top:8px}
+.chapter-no{position:sticky;top:16px;align-self:start;display:grid;place-items:center;width:48px;height:48px;border-radius:var(--radius-sm);background:var(--asphalt);color:var(--amber);font-size:24px;font-weight:700}
+.chapter h2{font-size:clamp(22px,2.4vw,28px);margin:6px 0 16px}
+.chapter-body>p,.chapter-body li{font-size:16px;line-height:1.75}
+.chapter-body .controls{margin:18px 0}
+.question{font-size:20px!important;font-weight:700;color:var(--navy);margin:22px 0 10px}
+.timeline{list-style:none;margin:0;padding:0;border-left:3px solid var(--amber);max-width:70ch}
+.timeline li{position:relative;padding:0 0 14px 20px}
+.timeline li::before{content:"";position:absolute;left:-8px;top:8px;width:13px;height:13px;border-radius:50%;background:var(--paper);border:3px solid var(--asphalt)}
+.timeline time{display:block;font-weight:700;font-size:14px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 6px}
+.facts div{background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--navy);border-radius:var(--radius-sm);padding:14px 16px}
+.facts dd{margin:0;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy)}
+.facts dt{font-size:14px;color:var(--muted)}
+#obs-strip{width:100%;max-width:760px;display:block;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);margin:10px 0}
+#obs-strip .obs-axis{stroke:var(--line);stroke-width:2}
+#obs-strip .obs-label{font-size:12px;fill:var(--muted)}
+#obs-summary{font-weight:500;color:var(--ink)}
+.compare th[scope],.compare tbody th{color:var(--ink);font-weight:700;white-space:normal}
+ul.plain{padding-left:1.1em;max-width:75ch}
+.chapter .berth-grid{align-items:start}
+
 /* Route map simulation. */
-.route-sim{margin-bottom:20px}
+.route-sim{margin-top:28px}
 .sim-controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:14px 0}
 .sim-controls [role=group]{display:inline-flex}
 .sim-controls [role=group] button{border-radius:0;margin-left:-1px}
@@ -99,6 +121,8 @@ footer{font-size:13px;color:var(--muted);padding:26px 0;line-height:1.8}
 [hidden]{display:none!important}
 
 @media (max-width:900px){
+ .chapter{grid-template-columns:1fr}.chapter-no{position:static;margin-bottom:8px}
+ .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
  #route-map{height:420px}
  .masthead{grid-template-columns:1fr;gap:28px;padding:32px 16px 56px}
  .berth-grid,.maps,.math-grid{grid-template-columns:1fr}
