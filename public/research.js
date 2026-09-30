@@ -1,5 +1,6 @@
 import {voronoiCells} from '/src/voronoi.js';
 import {mountMap} from '/public/map.js';
+import {overlapSummary} from '/src/network.js';
 const svg=document.querySelector('#voronoi');
 const points=[{id:'A',x:90,y:90},{id:'B',x:290,y:50},{id:'C',x:470,y:120},{id:'D',x:460,y:290},{id:'E',x:280,y:340},{id:'F',x:80,y:270}];
 const colors=['#dae9fa','#fde6cf','#d4eee6','#eadff3','#fae4e4','#e5eacb'];
@@ -38,13 +39,23 @@ for(const tab of tabs){
   if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const target=event.key==='Home'?tabs[0]:event.key==='End'?tabs.at(-1):tabs.find(item=>item!==tab);target.focus();selectTab(target);}
  });
 }
+function row(body,cells){const tr=document.createElement('tr');for(const value of cells){const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
+function renderOverlap(){
+ const {busiestStops,sharedPairs}=overlapSummary(dataset);
+ const stops=document.querySelector('#busy-stops'),pairs=document.querySelector('#shared-pairs');
+ for(const {stop,routes} of busiestStops.slice(0,10))row(stops,[stop.name,stop.arsId,routes.length,routes.map(route=>route.name).join(', ')]);
+ for(const {a,b,sharedStops} of sharedPairs.slice(0,10))row(pairs,[`${a.name} · ${b.name}`,sharedStops,`${a.termMinutes??'?'} · ${b.termMinutes??'?'}`]);
+ if(!busiestStops.length)row(stops,['경유 노선 자료가 없습니다.','','','']);
+}
 async function init(){
  try{
   const response=await fetch('/stations.json');
   if(response.ok){
    dataset=await response.json();
    const collected=dataset.fetchedAt?new Date(dataset.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+' KST':'시각 미상';
-   status.textContent=`서울특별시 정류소정보조회 · ${dataset.stops.length}개 정류장 · 수집 ${collected}`;
+   status.textContent=`서울특별시 정류소정보조회 · ${dataset.stops.length}개 정류장 · ${dataset.routes?.length??0}개 경유 노선 · 수집 ${collected}`;
+   if(dataset.query)document.querySelector('#area-scope').textContent=`중심 (${dataset.query.centerLat}, ${dataset.query.centerLng}) 반경 ${dataset.query.radiusMeters}m 안의 모든 승차 정류장입니다. 회의록의 여섯 거점과 일대일로 대응하는 목록은 아닙니다.`;
+   renderOverlap();
   }else if(response.status===404)status.textContent='정류장 데이터 수집 전입니다. 지도만 표시하며 가상 정류장을 실제 위치로 표시하지 않습니다.';
   else throw new Error('정류장 데이터를 읽지 못했습니다.');
   const list=document.querySelector('#station-list');

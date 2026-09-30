@@ -10,10 +10,14 @@ export async function collect(kind,value,{key=process.env.SEOUL_BUS_SERVICE_KEY,
   if(!['xml','json'].includes(format))throw new Error('지원 형식: xml 또는 json');
   if(!methods[kind]||!value||value.length>60)throw new Error('사용법: stations 검색어 | route 노선ID | arrivals 노선ID');
   if(kind!=='stations'&&!/^\d{9}$/.test(value))throw new Error('노선ID는 조회한 9자리 ID를 사용하세요.');
+  return request(methods[kind].path,{[methods[kind].param]:value},{key,fetchImpl,format});
+}
+export async function request(apiPath,params,{key=process.env.SEOUL_BUS_SERVICE_KEY,fetchImpl=fetch,format='json'}={}) {
   if(!key)throw new Error('SEOUL_BUS_SERVICE_KEY가 필요합니다. 실제 연결은 키 발급 후 검증하세요.');
-  const url=new URL(methods[kind].path,'http://ws.bus.go.kr/api/rest/');
+  const url=new URL(apiPath,'http://ws.bus.go.kr/api/rest/');
   // Use the decoded key from data.go.kr; URLSearchParams performs exactly one encoding.
-  url.searchParams.set('serviceKey',key);url.searchParams.set(methods[kind].param,value);
+  url.searchParams.set('serviceKey',key);
+  for(const [name,value] of Object.entries(params))url.searchParams.set(name,value);
   if(format==='json')url.searchParams.set('resultType','json');
   let response;
   try{response=await fetchImpl(url,{signal:AbortSignal.timeout(10000)});}catch{throw new Error('API 네트워크 오류 또는 10초 시간 초과');}
@@ -21,7 +25,9 @@ export async function collect(kind,value,{key=process.env.SEOUL_BUS_SERVICE_KEY,
   const xml=await response.text();
   if(format==='json'){
     let result;try{result=JSON.parse(xml);}catch{throw new Error('예상하지 못한 JSON 응답');}
-    if(String(result.msgHeader?.headerCd)!=='0')throw new Error('기관 오류; 활용승인과 인자를 확인하세요.');
+    // headerCd 4 = 결과 없음: an empty list, not a failure.
+    const code=String(result.msgHeader?.headerCd);
+    if(code!=='0'&&code!=='4')throw new Error('기관 오류; 활용승인과 인자를 확인하세요.');
     return result;
   }
   if(!/<headerCd>\s*0\s*<\/headerCd>/.test(xml))throw new Error('기관 오류 또는 예상하지 못한 XML 응답; 활용승인과 인자를 확인하세요.');

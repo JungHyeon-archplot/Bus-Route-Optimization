@@ -36,13 +36,15 @@ API 비밀키·원시 차량 식별정보는 커밋하지 않습니다. 공개 �
 
 `npm start`는 로컬 `.env`에서 `KAKAO_MAP_JS_KEY`를 읽습니다. 카카오 개발자 콘솔의 JavaScript SDK 도메인에 `http://localhost:8080`을 등록하세요. 브라우저 키는 도메인 제한을 사용하며, 서버용 `SEOUL_BUS_SERVICE_KEY`는 공개하지 않습니다.
 
-실제 서울시 API의 충무로 검색 결과 6개를 `data/public/stations.json`에 보존했습니다. 이름이 같은 정류장도 ID별로 구분합니다. 이 자료는 충무로 검색 결과이며 연구 권역 전체나 실시간 운행을 나타내지 않습니다. 수집시각과 출처는 데이터 및 화면에 표시됩니다.
+`data/public/stations.json`에는 충무로역~동국대 사이 중심 반경 800m 안의 모든 승차 정류장(`getStationByPos`)과 정류장별 경유 노선(`getRouteByStation`)을 보존합니다. 이름이 같은 정류장도 ID별로 구분하고, 미정차 지점(ARS 0)은 제외합니다. 배차간격은 기관 계획값이며 실측이 아닙니다. 수집시각과 출처는 데이터 및 화면에 표시됩니다. 화면의 "노선 쌍" 표는 정류장 공유 수만 셉니다. 시간표 겹침이나 혼잡 원인을 뜻하지 않습니다.
 
 ```sh
-npm run collect -- stations 충무로 json
-node scripts/import-stops.mjs data/raw/stations-수집시각.json
+npm run collect:area              # 기본 중심·반경 800m, API 호출 = 정류장 수 + 1
+npm run collect:area -- 127.0000 37.5595 1000
 npm start
 ```
+
+이름 검색만 필요하면 `npm run collect -- stations 충무로 json` 후 `node scripts/import-stops.mjs <생성된 파일>`을 씁니다(경유 노선 없이 덮어씀).
 
 서울시 API는 이번 환경에서 공식 HTTP 주소로 응답을 확인했고 HTTPS 요청은 시간 초과됐습니다. 현재 수집은 로컬에서만 수행합니다. 공개 배포 전에는 HTTPS 지원 게이트웨이 또는 공개 데이터 스냅샷 갱신 방식을 확정해야 합니다. Cloudflare에 인증키를 브라우저 코드로 올리지 마세요.
 

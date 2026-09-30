@@ -28,3 +28,13 @@ export function normalizeRoute(items,meta){
  }).sort((a,b)=>a.sequence-b.sequence);
  return {routeId:text(meta.routeId,'routeId'),...provenance(meta),stops};
 }
+const routeTypes={'0':'공용','1':'공항','2':'마을','3':'간선','4':'지선','5':'순환','6':'광역','7':'인천','8':'경기','9':'폐지'};
+// getRouteByStation items → routes passing one stop. term is the agency's nominal headway in minutes, not an observation.
+export function normalizeRoutesAtStop(items){
+ if(!Array.isArray(items))throw new Error('Expected route array');
+ return items.map(item=>{
+  const term=Number(item.term);
+  return {id:text(item.busRouteId,'busRouteId'),name:text(item.busRouteNm,'busRouteNm'),type:routeTypes[item.busRouteType]??'미상',typeCode:String(item.busRouteType??''),
+   termMinutes:Number.isFinite(term)&&term>0?term:null,start:item.stBegin?.trim()||null,end:item.stEnd?.trim()||null};
+ });
+}
