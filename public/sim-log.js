@@ -55,13 +55,24 @@ function saveCsv(name,rows){
  const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));link.download=name;link.click();URL.revokeObjectURL(link.href);
 }
 
-// ---- Experiment records: one row per recorded run, kept in this browser, so conditions can be compared later. ----
-const KEY='bus-sim-records-v1';
+// ---- Experiment records: one row per recorded run, so conditions can be compared later. ----
+// Shared with the whole team through /records when the deployment has a store; otherwise kept in this browser only.
+const KEY='bus-sim-records-v1',CODE_KEY='bus-sim-team-code',NAME_KEY='bus-sim-name';
 const TIMING={random:'제각각',spread:'간격 두기'};
-const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))??[];}catch{return [];}};
-let memory=load();
-const save=records=>{memory=records;try{localStorage.setItem(KEY,JSON.stringify(records));}catch{/* storage blocked: keep for this page only */}};
-const same=(a,b)=>['arsId','rule','timing','dwell','seed','minShared'].every(k=>a[k]===b[k]);
+const keyOf=record=>[record.arsId,record.rule,record.timing,record.dwell,record.seed,record.minShared].join('-');
+const stored=(key,fallback='')=>{try{return localStorage.getItem(key)??fallback;}catch{return fallback;}};
+const store=(key,value)=>{try{localStorage.setItem(key,value);}catch{/* storage blocked: keep for this page only */}};
+let memory=[],shared=false;
+
+const status=(message,bad=false)=>{const el=$('record-status');el.textContent=message;el.classList.toggle('bad',bad);};
+const saveLocal=records=>{memory=records;store(KEY,JSON.stringify(records));};
+
+async function api(method,path,body){
+ const response=await fetch(path,{method,headers:{'Content-Type':'application/json','x-team-code':$('team-code').value.trim()},body:body?JSON.stringify(body):undefined});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||'저장소가 응답하지 않습니다.');
+ return data;
+}
 
 function renderRecords(){
  const list=$('record-list'),max=Math.max(1,...memory.map(record=>record.totalWait));
@@ -73,31 +84,57 @@ function renderRecords(){
   name.textContent=`${index+1}. ${RULES[record.rule]}${record.rule==='single'?'':` ${record.berths}곳`} · ${TIMING[record.timing]} · ${record.dwell}초`;
   value.textContent=secs(record.totalWait);head.append(name,value);
   track.className='track';fill.style.width=(record.totalWait/max*100)+'%';track.append(fill);
-  meta.textContent=`${record.stopName} · ${record.served}대 중 ${record.waited}대 기다림 · 긴 줄 ${record.maxQueue}대 · seed ${record.seed} · 기준 ${record.minShared}곳`;
+  meta.textContent=`${record.stopName} · ${record.served}대 중 ${record.waited}대 기다림 · 긴 줄 ${record.maxQueue}대 · seed ${record.seed} · 기준 ${record.minShared}곳${record.by?' · '+record.by:''}`;
   remove.type='button';remove.className='remove';remove.textContent='지우기';remove.setAttribute('aria-label',`${index+1}번 기록 지우기`);
-  remove.addEventListener('click',()=>{save(memory.filter(item=>item!==record));renderRecords();});
+  remove.addEventListener('click',async()=>{
+   try{
+    if(shared)await api('DELETE','/records?key='+encodeURIComponent(keyOf(record)));
+    const rest=memory.filter(item=>item!==record);
+    if(shared)memory=rest;else saveLocal(rest);
+    renderRecords();status(shared?'팀 기록에서 지웠습니다.':'');
+   }catch(error){status(error.message,true);}
+  });
   li.append(head,track,meta,remove);list.append(li);
  });
 }
 
-$('record-add').addEventListener('click',()=>{
+$('record-add').addEventListener('click',async()=>{
  if(!lastRuns)return;
  const ctx=lastCtx,{s}=lastRuns.find(run=>run.key===ctx.rule),pairs=summarizeLog(s.log).pairs;
  const total=pairs.reduce((sum,pair)=>sum+pair.totalWait,0),linked=pairs.filter(pair=>ctx.linked(pair.blocker,pair.blocked)).reduce((sum,pair)=>sum+pair.totalWait,0);
- const record={savedAt:new Date().toISOString(),arsId:ctx.arsId,stopName:ctx.stopName,rule:ctx.rule,timing:ctx.timing,dwell:ctx.dwell,seed:ctx.seed,minShared:ctx.minShared,
-  berths:ctx.rule==='single'?1:ctx.colors,hours:2,served:s.served,waited:s.waited,totalWait:Math.round(s.totalWait),maxQueue:s.maxQueue,linkedShare:total?Math.round(linked/total*100):null};
- // Re-recording the same conditions replaces the old row instead of piling up duplicates.
- save([...memory.filter(item=>!same(item,record)),record]);renderRecords();
+ let record={savedAt:new Date().toISOString(),arsId:ctx.arsId,stopName:ctx.stopName,rule:ctx.rule,timing:ctx.timing,dwell:ctx.dwell,seed:ctx.seed,minShared:ctx.minShared,
+  berths:ctx.rule==='single'?1:ctx.colors,hours:2,served:s.served,waited:s.waited,totalWait:Math.round(s.totalWait),maxQueue:s.maxQueue,linkedShare:total?Math.round(linked/total*100):null,by:$('record-by').value.trim().slice(0,20)};
+ try{
+  if(shared){record=(await api('POST','/records',record)).record;store(NAME_KEY,record.by);}
+  // Re-recording the same conditions replaces the old row instead of piling up duplicates.
+  const next=[...memory.filter(item=>keyOf(item)!==keyOf(record)),record];
+  if(shared)memory=next;else saveLocal(next);
+  renderRecords();status(shared?'팀 기록에 저장했습니다.':'이 브라우저에 저장했습니다.');
+ }catch(error){status(error.message,true);}
 });
 $('record-csv').addEventListener('click',()=>{
  if(!memory.length)return;
- saveCsv('실험기록.csv',[['기록 시각','정류장','ARS','서는 방식','설 자리 수','버스 오는 시점','정차(초)','seed','함께 달림 기준(공유 정류장)','모의 시간(시간)','정차한 버스','기다린 버스','기다린 시간 합(초)','기다린 버스 평균 대기(초)','가장 긴 줄','이어진 쌍에서 생긴 대기(%)'],
-  ...memory.map(r=>[new Date(r.savedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),r.stopName,r.arsId,RULES[r.rule],r.berths,TIMING[r.timing],r.dwell,r.seed,r.minShared,r.hours,r.served,r.waited,r.totalWait,r.waited?Math.round(r.totalWait/r.waited*10)/10:0,r.maxQueue,r.linkedShare??''])]);
+ saveCsv('실험기록.csv',[['기록 시각','기록한 사람','정류장','ARS','서는 방식','설 자리 수','버스 오는 시점','정차(초)','seed','함께 달림 기준(공유 정류장)','모의 시간(시간)','정차한 버스','기다린 버스','기다린 시간 합(초)','기다린 버스 평균 대기(초)','가장 긴 줄','이어진 쌍에서 생긴 대기(%)'],
+  ...memory.map(r=>[new Date(r.savedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),r.by??'',r.stopName,r.arsId,RULES[r.rule],r.berths,TIMING[r.timing],r.dwell,r.seed,r.minShared,r.hours,r.served,r.waited,r.totalWait,r.waited?Math.round(r.totalWait/r.waited*10)/10:0,r.maxQueue,r.linkedShare??''])]);
 });
-$('record-clear').addEventListener('click',()=>{
- const button=$('record-clear');
- if(!memory.length)return;
- if(button.dataset.armed){delete button.dataset.armed;button.textContent='모두 지우기';save([]);renderRecords();}
- else{button.dataset.armed='1';button.textContent='한 번 더 누르면 지웁니다';}
-});
-renderRecords();
+$('record-refresh').addEventListener('click',loadRecords);
+
+async function loadRecords(){
+ try{
+  const response=await fetch('/records');
+  if(!response.ok)throw new Error('none');
+  const data=await response.json();
+  shared=true;memory=data.records;
+  $('record-mode').textContent='팀 전체가 같은 목록을 봅니다. 다른 사람이 방금 넣은 기록은 "새로 고침"으로 불러옵니다(반영까지 최대 1분).';
+  $('team-fields').hidden=false;$('team-code-row').hidden=!data.needsCode;
+ }catch{
+  shared=false;
+  try{memory=JSON.parse(stored(KEY,'[]'))??[];}catch{memory=[];}
+  $('record-mode').textContent='공유 저장소가 없는 환경이라 이 브라우저에만 저장됩니다.';
+  $('team-fields').hidden=true;
+ }
+ renderRecords();
+}
+$('team-code').value=stored(CODE_KEY);$('record-by').value=stored(NAME_KEY);
+$('team-code').addEventListener('change',()=>store(CODE_KEY,$('team-code').value.trim()));
+loadRecords();

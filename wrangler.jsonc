@@ -6,6 +6,8 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/config.json", "/live/*"]
-  }
+    "run_worker_first": ["/config.json", "/live/*", "/records"]
+  },
+  // 팀 공유 실험 기록 저장소
+  "kv_namespaces": [{ "binding": "RECORDS", "id": "96b3dfe86ab145aaa5452b145746e8e3" }]
 }

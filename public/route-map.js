@@ -98,15 +98,28 @@ function startLive(){stopLive();if(!map)return;refreshLive();liveTimer=setInterv
 export async function updateRouteMap(next){
  params=next;
  try{
+  // Route data first: the results and records only need the geometry, not the map.
+  if(!routesData){
+   const response=await fetch('/routes.json');
+   if(!response.ok)throw new Error('노선 경로 자료가 없습니다. npm run collect:routes 로 먼저 수집하세요.');
+   routesData=await response.json();
+   for(const route of routesData.routes)preps.set(route.id,prepareRoute(route));
+  }
+  $('sim-source').textContent=`노선 경로·정류장 순서: 서울시 노선정보조회, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
   if(!map){
-   const [config,data]=await Promise.all([fetch('/config.json').then(r=>r.json()),fetch('/routes.json').then(r=>{if(!r.ok)throw new Error('노선 경로 자료가 없습니다. npm run collect:routes 로 먼저 수집하세요.');return r.json();})]);
-   if(!config.kakaoJsKey)throw new Error('지도 키가 설정되지 않았습니다.');
-   await loadSdk(config.kakaoJsKey);maps=window.kakao.maps;routesData=data;
-   for(const route of data.routes)preps.set(route.id,prepareRoute(route));
-   map=new maps.Map($('route-map'),{center:new maps.LatLng(37.56,126.995),level:4});
-   map.addControl(new maps.ZoomControl(),maps.ControlPosition.RIGHT);
-   addEventListener('resize',()=>{map.relayout();map.setCenter(new maps.LatLng(params.stop.lat,params.stop.lng));});
-   $('route-map-error').textContent='';
+   try{
+    const config=await fetch('/config.json').then(r=>r.json());
+    if(!config.kakaoJsKey)throw new Error('지도 키가 설정되지 않았습니다.');
+    await loadSdk(config.kakaoJsKey);maps=window.kakao.maps;
+    map=new maps.Map($('route-map'),{center:new maps.LatLng(37.56,126.995),level:4});
+    map.addControl(new maps.ZoomControl(),maps.ControlPosition.RIGHT);
+    addEventListener('resize',()=>{map.relayout();map.setCenter(new maps.LatLng(params.stop.lat,params.stop.lng));});
+    $('route-map-error').textContent='';
+   }catch(error){
+    $('route-map-error').textContent=error.message+' 지도 없이 오른쪽 결과와 기록은 계속 쓸 수 있습니다.';
+    clearTimeout(tableTimer);tableTimer=setTimeout(()=>renderTable(params.routeIds.map(id=>preps.get(id)).filter(Boolean)),30);
+    return;
+   }
   }
   clear(layers);routeLines.clear();
   const stop=params.stop;
@@ -118,15 +131,15 @@ export async function updateRouteMap(next){
   const label=document.createElement('div');label.className='focus-stop';label.innerHTML='<span></span>';label.firstChild.textContent=stop.name;
   layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,xAnchor:.5,yAnchor:1,zIndex:5}));
   map.relayout();map.setCenter(new maps.LatLng(stop.lat,stop.lng));map.setLevel(4);
-  $('sim-source').textContent=`노선 경로·정류장 순서: 서울시 노선정보조회, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
   rebuildSim();
   if(liveTimer)refreshLive();
- }catch(error){$('route-map-error').textContent=error.message+' 오른쪽 결과표는 계속 볼 수 있습니다.';}
+ }catch(error){$('route-map-error').textContent=error.message;}
 }
 
 for(const input of document.querySelectorAll('input[name=rule],input[name=timing]'))input.addEventListener('change',()=>{
  rule=document.querySelector('input[name=rule]:checked').value;timing=document.querySelector('input[name=timing]:checked').value;
  if(sim)rebuildSim();
+ else if(routesData&&params)renderTable(params.routeIds.map(id=>preps.get(id)).filter(Boolean)); // no map: numbers only
 });
 $('sim-play').addEventListener('click',()=>{
  if(!sim)return;

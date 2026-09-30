@@ -48,9 +48,14 @@
   <button id="record-add" class="download">지금 조건의 결과 기록하기</button></section>
 
  <section><h2>실험 기록 <span id="record-count" class="count"></span></h2>
-  <p class="hint">기록한 결과를 나란히 비교합니다. 막대는 2시간 동안 기다린 시간 합이고, 이 브라우저에 저장됩니다.</p>
+  <p class="hint">기록한 결과를 나란히 비교합니다. 막대는 2시간 동안 기다린 시간 합입니다. <span id="record-mode"></span></p>
+  <div id="team-fields" class="team-fields" hidden>
+   <label class="inline">기록하는 사람 <input id="record-by" type="text" maxlength="20" placeholder="이름(선택)" autocomplete="off"></label>
+   <label class="inline" id="team-code-row">팀 코드 <input id="team-code" type="password" maxlength="40" autocomplete="off" placeholder="기록·삭제에 필요"></label>
+  </div>
+  <p id="record-status" class="record-status" role="status"></p>
   <ol id="record-list" class="records"></ol>
-  <div class="record-actions"><button id="record-csv" class="download">기록 CSV 받기</button><button id="record-clear" class="download danger">모두 지우기</button></div></section>
+  <div class="record-actions"><button id="record-csv" class="download">기록 CSV 받기</button><button id="record-refresh" class="download">새로 고침</button></div></section>
 
  <section><h2>문제가 생긴 곳 (기록)</h2>
   <p class="hint">고른 방식으로 2시간 돌렸을 때 기다림이 어디서 생겼는지입니다. 앞에 있던 노선은 그 버스가 도착했을 때 자리를 쓰고 있었거나 먼저 줄 서 있던 버스입니다.</p>
