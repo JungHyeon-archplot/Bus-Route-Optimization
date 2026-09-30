@@ -1,5 +1,6 @@
 import {loadSdk} from '/public/map.js';
 import {prepareRoute,positionAt,createSim,step,runFor} from '/src/routesim.js';
+import {renderLog,resetLiveLog,updateLiveLog} from '/public/sim-log.js';
 const $=id=>document.getElementById(id);
 const GREY='#1f3a5f';
 let routeLines=new Map(),liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',timing='random',tableTimer,playing=false,rate=30,last=0,liveTimer;
@@ -22,6 +23,7 @@ function rebuildSim(){
  }
  const skipped=list.filter(prep=>prep.stopAt[focus]===undefined).map(prep=>prep.route.name);
  $('sim-skipped').textContent=skipped.length?`${skipped.join(', ')}번은 이 정류장 위치를 경로에 맞추지 못해 움직이기만 하고 줄 계산에서는 빠집니다.`:'';
+ resetLiveLog();
  draw();
  clearTimeout(tableTimer);tableTimer=setTimeout(()=>renderTable(list),30);
 }
@@ -41,7 +43,13 @@ function renderTable(list){
   const meta=document.createElement('small');meta.textContent=`${s.served}대 중 ${s.waited}대가 기다림 · 가장 긴 줄 ${s.maxQueue}대`;
   li.append(head,track,meta);list0.append(li);
  }
+ renderLog(rows,logContext());
  $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, 난수 seed 1. 굵은 줄이 지도에서 보고 있는 조건입니다.`;
+}
+
+function logContext(){
+ const {focus,stop,edges=[],dwell,colors}=params,links=new Set(edges.flatMap(e=>[e.a+'|'+e.b,e.b+'|'+e.a]));
+ return {rule,timing,dwell,colors,arsId:focus,stopName:stop.name,name:id=>preps.get(id)?.route.name??id,linked:(a,b)=>links.has(a+'|'+b)};
 }
 
 function draw(){
@@ -53,6 +61,7 @@ function draw(){
  $('sim-clock').textContent=`${Math.floor(sim.time/60)}분`;
  $('stat-served').textContent=served;$('stat-waited').textContent=waited;$('stat-queue').textContent=sim.queue.length;
  $('stat-queue').parentElement.classList.toggle('alert',sim.queue.length>0);
+ updateLiveLog(sim,logContext());
 }
 
 function frame(now){

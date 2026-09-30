@@ -55,7 +55,7 @@ output{font-variant-numeric:tabular-nums}
 .legend li{display:flex;align-items:center;gap:8px}
 
 /* Control panel */
-.panel{background:var(--paper);border-left:1px solid var(--line);overflow:auto;padding:0 20px 24px}
+.panel{background:var(--paper);border-left:1px solid var(--line);overflow:auto;padding:0 20px 24px;min-width:0}
 .panel section,.panel details{padding:18px 0;border-bottom:1px solid var(--line)}
 .panel h2{font-size:14px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .panel h2 output{font-size:15px;color:var(--navy);font-weight:700}
@@ -99,6 +99,24 @@ label.inline select{width:auto;padding:6px 10px}
 #obs-strip .obs-axis{stroke:var(--line);stroke-width:2}
 #obs-strip .obs-label{font-size:12px;fill:var(--muted)}
 .panel footer{padding-top:18px;line-height:1.6}
+
+/* Problem log */
+.table-wrap{overflow:auto;margin-top:6px}
+.panel table{width:100%;border-collapse:collapse;font-size:12.5px}
+.panel th,.panel td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.panel th{font-weight:500;color:var(--muted);white-space:nowrap;font-size:12px}
+.panel td:not(:first-child){white-space:nowrap}
+.log-share{font-size:13px;margin:10px 0;padding:10px 12px;border-radius:var(--r-sm);background:#fff6e0;border-left:3px solid var(--amber);color:var(--ink)}
+.log-share:empty{display:none}
+details.inner{padding:10px 0 0;border:0}
+details.inner summary{font-size:13px;font-weight:500;color:var(--navy)}
+.download{margin-top:12px;width:100%;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:500;cursor:pointer}
+.download:hover{background:var(--navy-soft)}
+.log-title{font-size:13px;margin:16px 0 6px;color:var(--muted);font-weight:700}
+.live-log{list-style:none;margin:0;padding:0;max-height:180px;overflow:auto;font-size:12.5px;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.live-log:empty::before{content:"재생하면 기다린 버스가 여기에 쌓입니다";display:block;padding:10px 12px;color:var(--muted)}
+.live-log li{padding:6px 12px;border-top:1px solid var(--line)}
+.live-log li:first-child{border-top:0;background:#fff4f2}
 
 /* Map overlays drawn by route-map.js */
 .bus-dot{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.45);flex:none}

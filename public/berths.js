@@ -41,7 +41,7 @@ function render(){
  $('coloring-note').textContent=colors>4
   ?`이 정류장은 자리가 최소 ${colors}곳 필요합니다. 서로 모두 이어진 노선 묶음이 있어 4곳(네 가지 색)으로는 나눌 수 없습니다.`
   :`이 정류장은 자리 ${colors}곳이면 나눌 수 있습니다.`;
- updateRouteMap({stop:graph.stop,focus:arsId,routeIds:graph.nodes.map(node=>node.id),assignment,colors,dwell,palette:berthColors});
+ updateRouteMap({stop:graph.stop,focus:arsId,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors,dwell,palette:berthColors});
 }
 
 try{
