@@ -36,7 +36,7 @@ function selectTab(tab){
 for(const tab of tabs){
  tab.addEventListener('click',()=>selectTab(tab));
  tab.addEventListener('keydown',event=>{
-  if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const target=event.key==='Home'?tabs[0]:event.key==='End'?tabs.at(-1):tabs.find(item=>item!==tab);target.focus();selectTab(target);}
+  if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const i=tabs.indexOf(tab),n=tabs.length;const target=event.key==='Home'?tabs[0]:event.key==='End'?tabs.at(-1):tabs[(i+(event.key==='ArrowRight'?1:n-1))%n];target.focus();selectTab(target);}
  });
 }
 function row(body,cells){const tr=document.createElement('tr');for(const value of cells){const td=document.createElement('td');td.textContent=value;tr.append(td);}body.append(tr);}
@@ -72,7 +72,7 @@ async function init(){
   };select.addEventListener('change',render);render();
  }catch{document.querySelector('#hub-note').textContent='거점 목록을 읽지 못했습니다. 다시 새로고침해 주세요.';}
  dataReady=true;
- if(location.hash==='#field-study')selectTab(tabs[1]);
+ if(location.hash==='#field-study')selectTab(document.getElementById('tab-field'));
  else if(!field.hidden)connectMap();
 }
 init();

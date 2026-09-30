@@ -19,7 +19,7 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
     try {
       const data=await readFile(path.join(root,file));
       res.writeHead(200,{'Content-Type':mime[path.extname(file)],'X-Content-Type-Options':'nosniff',
-        'Content-Security-Policy':"upgrade-insecure-requests; default-src 'self'; script-src 'self' https://dapi.kakao.com https://t1.daumcdn.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://dapi.kakao.com; object-src 'none'; frame-ancestors 'none'",
+        'Content-Security-Policy':"upgrade-insecure-requests; default-src 'self'; script-src 'self' https://dapi.kakao.com https://t1.daumcdn.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://dapi.kakao.com; object-src 'none'; frame-ancestors 'none'",
         'Cache-Control':'no-store'});
       res.end(req.method==='HEAD'?undefined:data);
     }catch{res.writeHead(404);res.end('Not found');}
