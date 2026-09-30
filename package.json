@@ -15,6 +15,9 @@
     "collect:routes": "node --env-file-if-exists=.env scripts/collect-routes.mjs",
     "observe": "node --env-file-if-exists=.env scripts/observe-arrivals.mjs",
     "build": "node scripts/build.mjs",
-    "deploy": "npm run build && npx wrangler deploy"
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.144.0"
   }
 }
