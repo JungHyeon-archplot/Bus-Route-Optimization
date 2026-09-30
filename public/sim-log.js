@@ -43,13 +43,61 @@ function download(){
  const ctx=lastCtx,head=['정류장','서는 방식','버스 오는 시점','정차(초)','설 자리 수','seed','도착(초)','도착(분:초)','노선','차량','자리','도착 때 앞 줄(대)','기다린 시간(초)','앞에 있던 노선','함께 달리는 쌍'];
  const rows=[head];
  for(const {key,s} of lastRuns)for(const entry of s.log)rows.push([
-  ctx.stopName,RULES[key],ctx.timing==='spread'?'노선끼리 간격 두기':'제각각',ctx.dwell,key==='single'?1:ctx.colors,1,
+  ctx.stopName,RULES[key],ctx.timing==='spread'?'노선끼리 간격 두기':'제각각',ctx.dwell,key==='single'?1:ctx.colors,ctx.seed,
   entry.arrival,clock(entry.arrival),ctx.name(entry.route),entry.vehicle,String.fromCharCode(65+entry.berth),entry.queueOnArrival,Math.round(entry.wait*10)/10,
   entry.blockedBy?ctx.name(entry.blockedBy):'',entry.blockedBy?(ctx.linked(entry.blockedBy,entry.route)?'예':'아니오'):'']);
- const csv='﻿'+rows.map(row=>row.map(value=>/[",\n]/.test(String(value))?`"${String(value).replace(/"/g,'""')}"`:value).join(',')).join('\r\n');
- const link=document.createElement('a');
- link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
- link.download=`정류장기록_${ctx.arsId}_${ctx.timing}_${ctx.dwell}초.csv`;
- link.click();URL.revokeObjectURL(link.href);
+ saveCsv(`정류장기록_${ctx.arsId}_${ctx.timing}_${ctx.dwell}초_seed${ctx.seed}.csv`,rows);
 }
 $('log-download').addEventListener('click',download);
+
+function saveCsv(name,rows){
+ const csv='\uFEFF'+rows.map(row=>row.map(value=>/[",\n]/.test(String(value))?`"${String(value).replace(/"/g,'""')}"`:value).join(',')).join('\r\n');
+ const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));link.download=name;link.click();URL.revokeObjectURL(link.href);
+}
+
+// ---- Experiment records: one row per recorded run, kept in this browser, so conditions can be compared later. ----
+const KEY='bus-sim-records-v1';
+const TIMING={random:'제각각',spread:'간격 두기'};
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))??[];}catch{return [];}};
+let memory=load();
+const save=records=>{memory=records;try{localStorage.setItem(KEY,JSON.stringify(records));}catch{/* storage blocked: keep for this page only */}};
+const same=(a,b)=>['arsId','rule','timing','dwell','seed','minShared'].every(k=>a[k]===b[k]);
+
+function renderRecords(){
+ const list=$('record-list'),max=Math.max(1,...memory.map(record=>record.totalWait));
+ list.replaceChildren();
+ $('record-count').textContent=memory.length?`${memory.length}건`:'';
+ if(!memory.length){const li=document.createElement('li');li.className='empty';li.textContent='아직 기록이 없습니다. 조건을 고르고 "지금 조건의 결과 기록하기"를 누르세요.';list.append(li);return;}
+ memory.forEach((record,index)=>{
+  const li=document.createElement('li'),head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b'),track=document.createElement('div'),fill=document.createElement('i'),meta=document.createElement('small'),remove=document.createElement('button');
+  name.textContent=`${index+1}. ${RULES[record.rule]}${record.rule==='single'?'':` ${record.berths}곳`} · ${TIMING[record.timing]} · ${record.dwell}초`;
+  value.textContent=secs(record.totalWait);head.append(name,value);
+  track.className='track';fill.style.width=(record.totalWait/max*100)+'%';track.append(fill);
+  meta.textContent=`${record.stopName} · ${record.served}대 중 ${record.waited}대 기다림 · 긴 줄 ${record.maxQueue}대 · seed ${record.seed} · 기준 ${record.minShared}곳`;
+  remove.type='button';remove.className='remove';remove.textContent='지우기';remove.setAttribute('aria-label',`${index+1}번 기록 지우기`);
+  remove.addEventListener('click',()=>{save(memory.filter(item=>item!==record));renderRecords();});
+  li.append(head,track,meta,remove);list.append(li);
+ });
+}
+
+$('record-add').addEventListener('click',()=>{
+ if(!lastRuns)return;
+ const ctx=lastCtx,{s}=lastRuns.find(run=>run.key===ctx.rule),pairs=summarizeLog(s.log).pairs;
+ const total=pairs.reduce((sum,pair)=>sum+pair.totalWait,0),linked=pairs.filter(pair=>ctx.linked(pair.blocker,pair.blocked)).reduce((sum,pair)=>sum+pair.totalWait,0);
+ const record={savedAt:new Date().toISOString(),arsId:ctx.arsId,stopName:ctx.stopName,rule:ctx.rule,timing:ctx.timing,dwell:ctx.dwell,seed:ctx.seed,minShared:ctx.minShared,
+  berths:ctx.rule==='single'?1:ctx.colors,hours:2,served:s.served,waited:s.waited,totalWait:Math.round(s.totalWait),maxQueue:s.maxQueue,linkedShare:total?Math.round(linked/total*100):null};
+ // Re-recording the same conditions replaces the old row instead of piling up duplicates.
+ save([...memory.filter(item=>!same(item,record)),record]);renderRecords();
+});
+$('record-csv').addEventListener('click',()=>{
+ if(!memory.length)return;
+ saveCsv('실험기록.csv',[['기록 시각','정류장','ARS','서는 방식','설 자리 수','버스 오는 시점','정차(초)','seed','함께 달림 기준(공유 정류장)','모의 시간(시간)','정차한 버스','기다린 버스','기다린 시간 합(초)','기다린 버스 평균 대기(초)','가장 긴 줄','이어진 쌍에서 생긴 대기(%)'],
+  ...memory.map(r=>[new Date(r.savedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),r.stopName,r.arsId,RULES[r.rule],r.berths,TIMING[r.timing],r.dwell,r.seed,r.minShared,r.hours,r.served,r.waited,r.totalWait,r.waited?Math.round(r.totalWait/r.waited*10)/10:0,r.maxQueue,r.linkedShare??''])]);
+});
+$('record-clear').addEventListener('click',()=>{
+ const button=$('record-clear');
+ if(!memory.length)return;
+ if(button.dataset.armed){delete button.dataset.armed;button.textContent='모두 지우기';save([]);renderRecords();}
+ else{button.dataset.armed='1';button.textContent='한 번 더 누르면 지웁니다';}
+});
+renderRecords();

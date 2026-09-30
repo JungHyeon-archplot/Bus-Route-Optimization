@@ -118,6 +118,24 @@ details.inner summary{font-size:13px;font-weight:500;color:var(--navy)}
 .live-log li{padding:6px 12px;border-top:1px solid var(--line)}
 .live-log li:first-child{border-top:0;background:#fff4f2}
 
+/* Experiment records */
+.count{font-size:12px;font-weight:500;color:var(--muted)}
+#sim-seed{width:5.5em;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r-sm);font:inherit;font-size:14px;background:#fff}
+label.inline .hint{margin:0;flex-basis:100%}
+.records{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.records li{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.records li.empty{display:block;color:var(--muted);font-size:13px;border-style:dashed}
+.records div:first-child{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.records b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.records .track{grid-column:1/-1;height:8px;border-radius:999px;background:#e3e8e5;overflow:hidden}
+.records .track i{display:block;height:100%;min-width:2px;border-radius:999px;background:var(--navy)}
+.records small{font-size:12px;color:var(--muted)}
+.records .remove{border:0;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0 2px;text-decoration:underline}
+.records .remove:hover{color:var(--danger)}
+.record-actions{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+.download.danger{border-color:var(--line);color:var(--muted)}
+.download.danger[data-armed]{border-color:var(--danger);color:var(--danger)}
+
 /* Map overlays drawn by route-map.js */
 .bus-dot{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.45);flex:none}
 .bus-dot.queued{border-color:#fff;box-shadow:0 0 0 3px var(--danger),0 0 10px 3px rgba(214,69,50,.6);width:16px;height:16px}

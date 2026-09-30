@@ -9,9 +9,9 @@ function clear(list){for(const item of list)item.setMap(null);list.length=0;}
 function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
 
 function rebuildSim(){
- const {focus,routeIds,assignment,colors,dwell,palette}=params;
+ const {focus,routeIds,assignment,colors,dwell,palette,seed}=params;
  const list=routeIds.map(id=>preps.get(id)).filter(Boolean);
- sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed:1,timing});
+ sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed,timing});
  clear(busOverlays);
  for(const [id,line] of routeLines)line.setOptions(rule==='colored'?{strokeColor:palette[assignment[id]],strokeOpacity:.55,strokeWeight:4}:{strokeColor:'#5b6770',strokeOpacity:.35,strokeWeight:4});
  for(const bus of sim.buses){
@@ -30,9 +30,9 @@ function rebuildSim(){
 
 // Same simulation, run headless for 2 hours under each way of stopping, so the table matches what the map shows.
 function renderTable(list){
- const {focus,assignment,colors,dwell}=params,list0=$('result-bars');
+ const {focus,assignment,colors,dwell,seed}=params,list0=$('result-bars');
  const rows=[['single','설 자리 1곳'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`],['colored',`설 자리 ${colors}곳 · 노선별 지정`]]
-  .map(([key,label])=>({key,label,s:runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed:1,timing})}));
+  .map(([key,label])=>({key,label,s:runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed,timing})}));
  const max=Math.max(1,...rows.map(row=>row.s.totalWait));
  list0.replaceChildren();
  for(const {key,label,s} of rows){
@@ -44,12 +44,12 @@ function renderTable(list){
   li.append(head,track,meta);list0.append(li);
  }
  renderLog(rows,logContext());
- $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, 난수 seed 1. 굵은 줄이 지도에서 보고 있는 조건입니다.`;
+ $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, 난수 seed ${seed}. 굵은 줄이 지도에서 보고 있는 조건입니다.`;
 }
 
 function logContext(){
- const {focus,stop,edges=[],dwell,colors}=params,links=new Set(edges.flatMap(e=>[e.a+'|'+e.b,e.b+'|'+e.a]));
- return {rule,timing,dwell,colors,arsId:focus,stopName:stop.name,name:id=>preps.get(id)?.route.name??id,linked:(a,b)=>links.has(a+'|'+b)};
+ const {focus,stop,edges=[],dwell,colors,seed,minShared}=params,links=new Set(edges.flatMap(e=>[e.a+'|'+e.b,e.b+'|'+e.a]));
+ return {rule,timing,dwell,colors,seed,minShared,arsId:focus,stopName:stop.name,name:id=>preps.get(id)?.route.name??id,linked:(a,b)=>links.has(a+'|'+b)};
 }
 
 function draw(){

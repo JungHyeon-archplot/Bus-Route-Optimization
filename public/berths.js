@@ -31,7 +31,7 @@ function drawAssignments(nodes,assignment){
 }
 
 function render(){
- const arsId=$('berth-stop').value,minShared=Number($('berth-shared').value),dwell=Number($('berth-dwell').value);
+ const arsId=$('berth-stop').value,minShared=Number($('berth-shared').value),dwell=Number($('berth-dwell').value),seed=Math.max(1,Math.floor(Number($('sim-seed').value))||1);
  $('berth-shared-out').textContent=minShared+'곳 이상';$('berth-dwell-out').textContent=dwell+'초';
  const graph=conflictGraph(dataset,arsId,{minShared});
  const {colors,assignment}=colorGraph(graph.nodes,graph.edges);
@@ -41,7 +41,7 @@ function render(){
  $('coloring-note').textContent=colors>4
   ?`이 정류장은 자리가 최소 ${colors}곳 필요합니다. 서로 모두 이어진 노선 묶음이 있어 4곳(네 가지 색)으로는 나눌 수 없습니다.`
   :`이 정류장은 자리 ${colors}곳이면 나눌 수 있습니다.`;
- updateRouteMap({stop:graph.stop,focus:arsId,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors,dwell,palette:berthColors});
+ updateRouteMap({stop:graph.stop,focus:arsId,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors,dwell,seed,minShared,palette:berthColors});
 }
 
 try{
@@ -51,7 +51,7 @@ try{
  const select=$('berth-stop');
  const busy=overlapSummary(dataset).busiestStops.filter(({routes})=>routes.filter(route=>!NON_DAYTIME.has(route.typeCode)).length>=3).slice(0,12);
  for(const {stop,routes} of busy)select.append(new Option(`${stop.name} (${stop.arsId}) · 노선 ${routes.length}개`,stop.arsId));
- for(const id of ['berth-stop','berth-shared','berth-dwell'])$(id).addEventListener('input',render);
+ for(const id of ['berth-stop','berth-shared','berth-dwell','sim-seed'])$(id).addEventListener('input',render);
  render();
 }catch{
  $('stop-note').textContent='경유 노선 자료가 없습니다. npm run collect:area 로 먼저 수집하세요.';

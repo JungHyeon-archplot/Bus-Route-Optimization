@@ -43,7 +43,14 @@
 
  <section><h2>2시간 돌렸을 때 버스가 기다린 시간</h2>
   <ul id="result-bars" class="bars"><li class="hint">계산 중…</li></ul>
-  <p id="result-note" class="hint"></p></section>
+  <p id="result-note" class="hint"></p>
+  <label class="inline">난수 seed <input id="sim-seed" type="number" min="1" max="9999" step="1" value="1" inputmode="numeric"><span class="hint">버스 출발 위치를 바꿉니다. 같은 seed는 같은 결과를 냅니다. "노선끼리 간격 두기"는 출발 위치가 정해져 있어 seed와 무관합니다.</span></label>
+  <button id="record-add" class="download">지금 조건의 결과 기록하기</button></section>
+
+ <section><h2>실험 기록 <span id="record-count" class="count"></span></h2>
+  <p class="hint">기록한 결과를 나란히 비교합니다. 막대는 2시간 동안 기다린 시간 합이고, 이 브라우저에 저장됩니다.</p>
+  <ol id="record-list" class="records"></ol>
+  <div class="record-actions"><button id="record-csv" class="download">기록 CSV 받기</button><button id="record-clear" class="download danger">모두 지우기</button></div></section>
 
  <section><h2>문제가 생긴 곳 (기록)</h2>
   <p class="hint">고른 방식으로 2시간 돌렸을 때 기다림이 어디서 생겼는지입니다. 앞에 있던 노선은 그 버스가 도착했을 때 자리를 쓰고 있었거나 먼저 줄 서 있던 버스입니다.</p>
