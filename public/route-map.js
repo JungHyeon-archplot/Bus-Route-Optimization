@@ -1,8 +1,8 @@
 import {loadSdk} from '/public/map.js';
 import {prepareRoute,positionAt,createSim,step,runFor} from '/src/routesim.js';
 const $=id=>document.getElementById(id);
-const GREY='#7b858c';
-let liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',timing='random',tableTimer,playing=false,rate=30,last=0,liveTimer;
+const GREY='#1f3a5f';
+let routeLines=new Map(),liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',timing='random',tableTimer,playing=false,rate=30,last=0,liveTimer;
 
 function clear(list){for(const item of list)item.setMap(null);list.length=0;}
 function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
@@ -12,6 +12,7 @@ function rebuildSim(){
  const list=routeIds.map(id=>preps.get(id)).filter(Boolean);
  sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed:1,timing});
  clear(busOverlays);
+ for(const [id,line] of routeLines)line.setOptions(rule==='colored'?{strokeColor:palette[assignment[id]],strokeOpacity:.55,strokeWeight:4}:{strokeColor:'#5b6770',strokeOpacity:.35,strokeWeight:4});
  for(const bus of sim.buses){
   const color=rule==='colored'?palette[assignment[bus.route]]:GREY;
   const el=dot('bus-dot',color,bus.prep.route.name);
@@ -27,14 +28,18 @@ function rebuildSim(){
 
 // Same simulation, run headless for 2 hours under each way of stopping, so the table matches what the map shows.
 function renderTable(list){
- const {focus,assignment,colors,dwell}=params,body=$('result-table');
- const rows=[['single','설 자리 1곳'],['pooled',`${colors}곳, 빈 곳 아무 데나`],['colored',`${colors}곳, 노선별 지정`]];
- body.replaceChildren();
- for(const [key,label] of rows){
-  const s=runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed:1,timing});
-  const tr=document.createElement('tr');if(key===rule)tr.className='current';
-  for(const value of [label,`${s.waited}대 / ${s.served}대`,`${Math.round(s.totalWait/60)}분 ${Math.round(s.totalWait%60)}초`,`${s.maxQueue}대`]){const td=document.createElement('td');td.textContent=value;tr.append(td);}
-  body.append(tr);
+ const {focus,assignment,colors,dwell}=params,list0=$('result-bars');
+ const rows=[['single','설 자리 1곳'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`],['colored',`설 자리 ${colors}곳 · 노선별 지정`]]
+  .map(([key,label])=>({key,label,s:runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed:1,timing})}));
+ const max=Math.max(1,...rows.map(row=>row.s.totalWait));
+ list0.replaceChildren();
+ for(const {key,label,s} of rows){
+  const li=document.createElement('li');if(key===rule)li.className='current';
+  const head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b');
+  name.textContent=label;value.textContent=s.totalWait<1?'0초':`${Math.floor(s.totalWait/60)}분 ${Math.round(s.totalWait%60)}초`;head.append(name,value);
+  const track=document.createElement('div'),fill=document.createElement('i');track.className='track';fill.style.width=(s.totalWait/max*100)+'%';track.append(fill);
+  const meta=document.createElement('small');meta.textContent=`${s.served}대 중 ${s.waited}대가 기다림 · 가장 긴 줄 ${s.maxQueue}대`;
+  li.append(head,track,meta);list0.append(li);
  }
  $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, 난수 seed 1. 굵은 줄이 지도에서 보고 있는 조건입니다.`;
 }
@@ -46,7 +51,8 @@ function draw(){
  }
  const {served,waited,totalWait}=sim.stats;
  $('sim-clock').textContent=`${Math.floor(sim.time/60)}분`;
- $('sim-stats').textContent=`이 정류장에 선 버스 ${served}대 · 기다린 버스 ${waited}대 · 지금 줄 ${sim.queue.length}대`;
+ $('stat-served').textContent=served;$('stat-waited').textContent=waited;$('stat-queue').textContent=sim.queue.length;
+ $('stat-queue').parentElement.classList.toggle('alert',sim.queue.length>0);
 }
 
 function frame(now){
@@ -93,15 +99,15 @@ export async function updateRouteMap(next){
    addEventListener('resize',()=>{map.relayout();map.setCenter(new maps.LatLng(params.stop.lat,params.stop.lng));});
    $('route-map-error').textContent='';
   }
-  clear(layers);
+  clear(layers);routeLines.clear();
   const stop=params.stop;
   for(const id of params.routeIds){
    const route=preps.get(id)?.route;if(!route)continue;
-   layers.push(new maps.Polyline({map,path:route.path.map(([lat,lng])=>new maps.LatLng(lat,lng)),strokeWeight:4,strokeColor:params.palette[params.assignment[id]],strokeOpacity:.45}));
+   const line=new maps.Polyline({map,path:route.path.map(([lat,lng])=>new maps.LatLng(lat,lng)),strokeWeight:4,strokeColor:'#5b6770',strokeOpacity:.35});
+   layers.push(line);routeLines.set(id,line);
   }
-  const label=document.createElement('span');label.className='focus-stop';label.textContent=stop.name;
-  layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,yAnchor:1.6,zIndex:5}));
-  layers.push(new maps.Circle({map,center:new maps.LatLng(stop.lat,stop.lng),radius:40,strokeWeight:2,strokeColor:'#1d2328',fillColor:'#ffb000',fillOpacity:.9}));
+  const label=document.createElement('div');label.className='focus-stop';label.innerHTML='<span></span>';label.firstChild.textContent=stop.name;
+  layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,xAnchor:.5,yAnchor:1,zIndex:5}));
   map.relayout();map.setCenter(new maps.LatLng(stop.lat,stop.lng));map.setLevel(4);
   $('sim-source').textContent=`노선 경로·정류장 순서: 서울시 노선정보조회, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
   rebuildSim();
@@ -115,11 +121,11 @@ for(const input of document.querySelectorAll('input[name=rule],input[name=timing
 });
 $('sim-play').addEventListener('click',()=>{
  if(!sim)return;
- playing=!playing;$('sim-play').textContent=playing?'멈춤':'재생';
+ playing=!playing;$('sim-play').classList.toggle('playing',playing);$('sim-play').setAttribute('aria-label',playing?'멈춤':'재생');
  if(playing){last=0;requestAnimationFrame(frame);}
 });
 $('sim-reset').addEventListener('click',()=>{if(sim)rebuildSim();});
-$('sim-rate').addEventListener('input',event=>{rate=Number(event.target.value);});
+for(const input of document.querySelectorAll('input[name=rate]'))input.addEventListener('change',()=>{rate=Number(input.value);});
 $('live-toggle').addEventListener('change',event=>{
  stopLive();clear(liveOverlays);$('live-status').textContent='';
  if(event.target.checked)startLive();

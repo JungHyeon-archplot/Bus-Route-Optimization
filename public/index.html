@@ -8,9 +8,18 @@
 <div class="map-wrap">
  <div id="route-map" aria-label="실제 노선 위 버스 시뮬레이션 지도"></div>
  <p id="route-map-error" class="map-error" role="alert"></p>
- <div class="hud" role="status" aria-live="polite"><strong id="sim-clock">0분</strong><span id="sim-stats">재생을 누르면 버스가 움직입니다</span></div>
- <div class="playbar"><button id="sim-play">재생</button><button id="sim-reset" class="ghost">처음으로</button><label>빠르기 <select id="sim-rate"><option value="10">10배</option><option value="30" selected>30배</option><option value="90">90배</option></select></label></div>
- <ul class="legend"><li><span class="bus-dot" style="background:#7b858c"></span>시뮬레이션 버스</li><li><span class="bus-dot queued" style="background:#7b858c"></span>자리가 비길 기다리는 버스</li><li><span class="live-dot" style="background:#7b858c"></span>지금 실제 버스</li></ul>
+ <div class="hud" role="status" aria-live="polite">
+  <div><span>경과</span><strong id="sim-clock">0분</strong></div>
+  <div><span>정차한 버스</span><strong id="stat-served">0</strong></div>
+  <div><span>기다린 버스</span><strong id="stat-waited">0</strong></div>
+  <div><span>지금 줄</span><strong id="stat-queue">0</strong></div>
+ </div>
+ <div class="playbar">
+  <button id="sim-play" class="play" aria-label="재생"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5v14l11-7z"/><path class="i-pause" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+  <button id="sim-reset" class="icon" aria-label="처음으로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.3 4H3l3.5-4L10 9H7.9A5 5 0 1 0 12 7z"/></svg></button>
+  <div class="speed" role="radiogroup" aria-label="빠르기"><label><input type="radio" name="rate" value="10"><span>10×</span></label><label><input type="radio" name="rate" value="30" checked><span>30×</span></label><label><input type="radio" name="rate" value="90"><span>90×</span></label></div>
+ </div>
+ <ul class="legend"><li><span class="bus-dot" style="background:#1f3a5f"></span>시뮬레이션 버스</li><li><span class="bus-dot queued" style="background:#1f3a5f"></span>자리를 기다리는 버스</li><li><span class="live-dot" style="background:#1f3a5f"></span>지금 실제 버스</li></ul>
 </div>
 
 <aside class="panel" aria-label="시뮬레이션 조건">
@@ -32,8 +41,8 @@
  <section><h2>한 대가 서 있는 시간 <output id="berth-dwell-out">40초</output></h2>
   <input id="berth-dwell" type="range" min="15" max="60" step="5" value="40" aria-label="한 대가 서 있는 시간"><p class="hint">승객이 많을수록 깁니다.</p></section>
 
- <section><h2>2시간 돌렸을 때</h2>
-  <div class="table-wrap"><table><thead><tr><th>서는 방식</th><th>기다린 버스</th><th>기다린 시간 합</th><th>가장 긴 줄</th></tr></thead><tbody id="result-table"><tr><td colspan="4">계산 중…</td></tr></tbody></table></div>
+ <section><h2>2시간 돌렸을 때 버스가 기다린 시간</h2>
+  <ul id="result-bars" class="bars"><li class="hint">계산 중…</li></ul>
   <p id="result-note" class="hint"></p></section>
 
  <details><summary>노선별 자리 배정 보기</summary>
