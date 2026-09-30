@@ -54,5 +54,20 @@ test('live position proxy only serves collected routes, strips the key and cache
   await fetch(base+'/live/buspos?routeId=100100063');
   assert.deepEqual(first.buses,[{vehId:'1',plainNo:'서울70사1',lat:37.5,lng:127,dataTm:'20260930103612',stopFlag:false}]);
   assert.equal(calls,1);assert.ok(!JSON.stringify(first).includes('serviceKey'));
+  assert.equal(first.callsToday,1);
+ }finally{await new Promise(r=>server.close(r));}
+});
+test('live proxy stops at the daily limit instead of calling the agency',async()=>{
+ const {mkdtemp,mkdir,writeFile}=await import('node:fs/promises');const os=await import('node:os');const path=await import('node:path');
+ const root=await mkdtemp(path.join(os.tmpdir(),'bro-'));await mkdir(path.join(root,'data/public'),{recursive:true});
+ await writeFile(path.join(root,'data/public/routes.json'),JSON.stringify({routes:[{id:'1'},{id:'2'}]}));
+ let calls=0;
+ const server=createServer(root,{liveDailyLimit:1,fetchPositions:async()=>{calls++;return {msgBody:{itemList:[]}};}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{
+  const base='http://127.0.0.1:'+server.address().port;
+  assert.equal((await fetch(base+'/live/buspos?routeId=1')).status,200);
+  const blocked=await fetch(base+'/live/buspos?routeId=2');
+  assert.equal(blocked.status,429);assert.equal((await blocked.json()).callsToday,1);assert.equal(calls,1);
  }finally{await new Promise(r=>server.close(r));}
 });

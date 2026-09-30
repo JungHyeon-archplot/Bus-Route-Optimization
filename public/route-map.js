@@ -2,7 +2,7 @@ import {loadSdk} from '/public/map.js';
 import {prepareRoute,positionAt,createSim,step} from '/src/routesim.js';
 const $=id=>document.getElementById(id);
 const GREY='#7b858c';
-let maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',playing=false,rate=30,last=0,liveTimer;
+let liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',playing=false,rate=30,last=0,liveTimer;
 
 function clear(list){for(const item of list)item.setMap(null);list.length=0;}
 function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
@@ -43,17 +43,27 @@ function frame(now){
 
 async function refreshLive(){
  clear(liveOverlays);
- const results=await Promise.all(params.routeIds.map(id=>fetch('/live/buspos?routeId='+id).then(r=>r.ok?r.json():null).catch(()=>null)));
- let count=0,stamp='';
- for(const result of results.filter(Boolean)){
+ const responses=await Promise.all(params.routeIds.map(id=>fetch('/live/buspos?routeId='+id).then(async r=>({ok:r.ok,body:await r.json()})).catch(()=>null)));
+ clear(liveOverlays);
+ let count=0,stamp='',quota;
+ for(const response of responses.filter(Boolean)){
+  const result=response.body;
+  if(result.dailyLimit)quota=result;
+  if(!response.ok)continue;
   const name=preps.get(result.routeId)?.route.name??'';
   for(const bus of result.buses){
    const overlay=new maps.CustomOverlay({position:new maps.LatLng(bus.lat,bus.lng),content:dot('live-dot',params.palette[params.assignment[result.routeId]]??GREY,`${name}번 ${bus.plainNo}`),xAnchor:.5,yAnchor:.5,zIndex:4});
    overlay.setMap(map);liveOverlays.push(overlay);count++;stamp=result.fetchedAt;
   }
  }
- $('live-status').textContent=count?`실제 버스 ${count}대 · ${new Date(stamp).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul'})} 기준 · 30초마다 갱신`:'실시간 위치를 받지 못했습니다. 잠시 뒤 다시 켜 보세요.';
+ const left=quota?Math.max(0,quota.dailyLimit-quota.callsToday):0;
+ const minutes=Math.floor(left/params.routeIds.length*liveInterval/60);
+ const budget=quota?` · 오늘 호출 ${quota.callsToday}/${quota.dailyLimit}회, 이 간격이면 약 ${minutes}분 더 볼 수 있음`:'';
+ if(quota&&left===0){stopLive();$('live-toggle').checked=false;$('live-status').textContent=`오늘 실시간 위치 호출 한도(${quota.dailyLimit}회)에 닿아 멈췄습니다. 시뮬레이션은 계속 쓸 수 있습니다.`;return;}
+ $('live-status').textContent=count?`실제 버스 ${count}대 · ${new Date(stamp).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul'})} 기준 · ${liveInterval}초마다 갱신${budget}`:'실시간 위치를 받지 못했습니다. 잠시 뒤 다시 켜 보세요.';
 }
+function stopLive(){clearInterval(liveTimer);liveTimer=undefined;}
+function startLive(){stopLive();if(!map)return;refreshLive();liveTimer=setInterval(refreshLive,liveInterval*1000);}
 
 export async function updateRouteMap(next){
  params=next;
@@ -95,6 +105,7 @@ $('sim-play').addEventListener('click',()=>{
 $('sim-reset').addEventListener('click',()=>{if(sim)rebuildSim();});
 $('sim-rate').addEventListener('input',event=>{rate=Number(event.target.value);});
 $('live-toggle').addEventListener('change',event=>{
- clearInterval(liveTimer);liveTimer=undefined;clear(liveOverlays);$('live-status').textContent='';
- if(event.target.checked&&map){refreshLive();liveTimer=setInterval(refreshLive,30000);}
+ stopLive();clear(liveOverlays);$('live-status').textContent='';
+ if(event.target.checked)startLive();
 });
+$('live-interval').addEventListener('input',event=>{liveInterval=Number(event.target.value);if(liveTimer)startLive();});

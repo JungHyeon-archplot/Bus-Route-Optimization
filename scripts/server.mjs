@@ -3,8 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {request} from './collect.mjs';
-export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),{kakaoJsKey=process.env.KAKAO_MAP_JS_KEY||'',fetchPositions=routeId=>request('buspos/getBusPosByRtid',{busRouteId:routeId})}={}) {
-  const liveCache=new Map(); // routeId → {at, body}; 30 s keeps a page left open far under the 1,000/day quota
+export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),{kakaoJsKey=process.env.KAKAO_MAP_JS_KEY||'',fetchPositions=routeId=>request('buspos/getBusPosByRtid',{busRouteId:routeId}),liveDailyLimit=Number(process.env.LIVE_DAILY_LIMIT||950)}={}) {
+  // Seoul vehicles report about every 20 s, so a 9 s cache loses nothing. The dev key allows 1,000 calls/day per function;
+  // count them per KST day and stop before the agency does.
+  // ponytail: in-memory count resets on restart; persist to data/private if the server restarts often in one day.
+  const liveCache=new Map(),usage={day:'',calls:0};
+  const today=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
   let allowed;
   const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8'};
   return http.createServer(async(req,res)=>{
@@ -19,14 +23,18 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
       allowed??=new Set(JSON.parse(await readFile(path.join(root,'data/public/routes.json'),'utf8').catch(()=>'{"routes":[]}')).routes.map(route=>route.id));
       const json=(code,body)=>{res.writeHead(code,{'Content-Type':mime['.json'],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:JSON.stringify(body));};
       if(!allowed.has(routeId))return json(404,{error:'수집한 노선만 조회할 수 있습니다.'});
+      if(usage.day!==today()){usage.day=today();usage.calls=0;}
+      const quota=()=>({callsToday:usage.calls,dailyLimit:liveDailyLimit});
       const hit=liveCache.get(routeId);
-      if(hit&&Date.now()-hit.at<30000)return json(200,hit.body);
+      if(hit&&Date.now()-hit.at<9000)return json(200,{...hit.body,...quota()});
+      if(usage.calls>=liveDailyLimit)return json(429,{error:'오늘 실시간 위치 호출 한도에 가까워 멈췄습니다. 내일 다시 켜지거나, 운영계정 트래픽을 늘려야 합니다.',...quota()});
       try{
+        usage.calls++;
         const response=await fetchPositions(routeId);
         const buses=(response.msgBody?.itemList??[]).map(item=>({vehId:item.vehId,plainNo:item.plainNo,lat:Number(item.gpsY),lng:Number(item.gpsX),dataTm:item.dataTm,stopFlag:item.stopFlag==='1'}))
           .filter(bus=>Number.isFinite(bus.lat)&&Number.isFinite(bus.lng));
         const body={routeId,fetchedAt:new Date().toISOString(),buses};
-        liveCache.set(routeId,{at:Date.now(),body});return json(200,body);
+        liveCache.set(routeId,{at:Date.now(),body});return json(200,{...body,...quota()});
       }catch(error){return json(502,{error:'서울시 버스위치 API 응답을 받지 못했습니다.'});}
     }
     const file=pathname==='/'?'public/index.html':
