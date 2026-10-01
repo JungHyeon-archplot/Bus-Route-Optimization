@@ -88,7 +88,7 @@ function renderRecords(){
   remove.type='button';remove.className='remove';remove.textContent='지우기';remove.setAttribute('aria-label',`${index+1}번 기록 지우기`);
   remove.addEventListener('click',async()=>{
    try{
-    if(shared)await api('DELETE','/records?key='+encodeURIComponent(keyOf(record)));
+    if(shared)await api('DELETE','/records?id='+record.id);
     const rest=memory.filter(item=>item!==record);
     if(shared)memory=rest;else saveLocal(rest);
     renderRecords();status(shared?'팀 기록에서 지웠습니다.':'');
@@ -106,9 +106,9 @@ $('record-add').addEventListener('click',async()=>{
   berths:ctx.rule==='single'?1:ctx.colors,hours:2,served:s.served,waited:s.waited,totalWait:Math.round(s.totalWait),maxQueue:s.maxQueue,linkedShare:total?Math.round(linked/total*100):null,by:$('record-by').value.trim().slice(0,20)};
  try{
   if(shared){record=(await api('POST','/records',record)).record;store(NAME_KEY,record.by);}
-  // Re-recording the same conditions replaces the old row instead of piling up duplicates.
-  const next=[...memory.filter(item=>keyOf(item)!==keyOf(record)),record];
-  if(shared)memory=next;else saveLocal(next);
+  // Team records pile up and are never overwritten; the browser-only fallback still replaces the same conditions.
+  if(shared)memory=[...memory,record];
+  else saveLocal([...memory.filter(item=>keyOf(item)!==keyOf(record)),record]);
   renderRecords();status(shared?'팀 기록에 저장했습니다.':'이 브라우저에 저장했습니다.');
  }catch(error){status(error.message,true);}
 });
@@ -125,7 +125,7 @@ async function loadRecords(){
   if(!response.ok)throw new Error('none');
   const data=await response.json();
   shared=true;memory=data.records;
-  $('record-mode').textContent='팀 전체가 같은 목록을 봅니다. 다른 사람이 방금 넣은 기록은 "새로 고침"으로 불러옵니다(반영까지 최대 1분).';
+  $('record-mode').textContent='팀 전체가 같은 목록을 봅니다. 같은 조건도 덮어쓰지 않고 쌓이며, 다른 사람이 넣은 기록은 "새로 고침"으로 바로 불러옵니다.';
   $('team-fields').hidden=false;$('team-code-row').hidden=!data.needsCode;
  }catch{
   shared=false;

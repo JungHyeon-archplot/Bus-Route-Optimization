@@ -2,7 +2,7 @@
 // Secrets (set with `wrangler secret put` or the dashboard): KAKAO_MAP_JS_KEY, SEOUL_BUS_SERVICE_KEY, TEAM_CODE.
 import {toLiveBuses} from '../src/live.js';
 import {validateRecord} from '../src/records.js';
-const MAX_RECORDS=500;
+const MAX_RECORDS=5000;
 const json=(status,body,extra={})=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff',...extra}});
 let allowed;
 
@@ -37,32 +37,29 @@ export default {
  }
 };
 
-// Shared experiment records in KV: one key per set of conditions, the record itself in the key's metadata
-// so a single list() returns everything. Anyone can read; adding and deleting need the team code when one is set.
+// Shared experiment records in D1. Every record is a new row (nothing is overwritten) and deleting only marks the
+// row, so the team history stays. Anyone can read; adding and deleting need the team code when one is set.
 async function records(request,env,url){
  const noStore={'Cache-Control':'no-store'};
- if(!env.RECORDS)return json(404,{error:'공유 저장소가 연결되지 않았습니다.'},noStore);
+ if(!env.DB)return json(404,{error:'공유 저장소가 연결되지 않았습니다.'},noStore);
  if(request.method==='GET'){
-  const {keys}=await env.RECORDS.list({prefix:'r:',limit:1000});
-  const list=keys.filter(item=>item.metadata).map(item=>item.metadata).sort((a,b)=>a.savedAt.localeCompare(b.savedAt));
-  return json(200,{shared:true,needsCode:Boolean(env.TEAM_CODE),records:list},noStore);
+  const {results}=await env.DB.prepare('SELECT id, data FROM records WHERE deleted_at IS NULL ORDER BY id').all();
+  return json(200,{shared:true,needsCode:Boolean(env.TEAM_CODE),records:results.map(row=>({...JSON.parse(row.data),id:row.id}))},noStore);
  }
  if(request.method!=='POST'&&request.method!=='DELETE')return new Response(null,{status:405});
  if(env.TEAM_CODE&&request.headers.get('x-team-code')!==env.TEAM_CODE)return json(401,{error:'팀 코드가 맞지 않습니다.'},noStore);
  if(request.method==='DELETE'){
-  const key=url.searchParams.get('key')||'';
-  if(!/^[0-9a-z-]{10,60}$/.test(key))return json(400,{error:'잘못된 기록 키입니다.'},noStore);
-  await env.RECORDS.delete('r:'+key);
-  return json(200,{deleted:key},noStore);
+  const id=Number(url.searchParams.get('id'));
+  if(!Number.isInteger(id)||id<1)return json(400,{error:'잘못된 기록 번호입니다.'},noStore);
+  await env.DB.prepare('UPDATE records SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL').bind(new Date().toISOString(),id).run();
+  return json(200,{deleted:id},noStore);
  }
  const body=await request.text();
  if(body.length>2000)return json(413,{error:'기록이 너무 큽니다.'},noStore);
  let saved;
  try{saved=validateRecord(JSON.parse(body));}catch{return json(400,{error:'기록 형식이 맞지 않습니다.'},noStore);}
- if(!(await env.RECORDS.getWithMetadata('r:'+saved.key)).metadata){
-  const {keys}=await env.RECORDS.list({prefix:'r:',limit:1000});
-  if(keys.length>=MAX_RECORDS)return json(409,{error:`기록이 ${MAX_RECORDS}건으로 가득 찼습니다. 필요 없는 기록을 지워 주세요.`},noStore);
- }
- await env.RECORDS.put('r:'+saved.key,'',{metadata:saved.record});
- return json(200,saved,noStore);
+ const {count}=await env.DB.prepare('SELECT COUNT(*) AS count FROM records').first();
+ if(count>=MAX_RECORDS)return json(409,{error:`기록이 ${MAX_RECORDS}건으로 가득 찼습니다.`},noStore);
+ const row=await env.DB.prepare('INSERT INTO records (saved_at, data) VALUES (?, ?) RETURNING id').bind(saved.record.savedAt,JSON.stringify(saved.record)).first();
+ return json(200,{record:{...saved.record,id:row.id}},noStore);
 }

@@ -8,6 +8,7 @@
     "binding": "ASSETS",
     "run_worker_first": ["/config.json", "/live/*", "/records"]
   },
-  // 팀 공유 실험 기록 저장소
+  // 팀 공유 실험 기록 (D1: 덮어쓰지 않고 쌓임, 넣는 즉시 모두에게 보임). 예전 KV 저장소는 옮기기용으로만 남김.
+  "d1_databases": [{ "binding": "DB", "database_name": "bus-route-records", "database_id": "48b8a9b3-5a57-44de-9c22-4af78c28b791", "migrations_dir": "migrations" }],
   "kv_namespaces": [{ "binding": "RECORDS", "id": "96b3dfe86ab145aaa5452b145746e8e3" }]
 }
