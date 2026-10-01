@@ -1,0 +1,24 @@
+{
+  "name": "bus-route-optimization",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env scripts/server.mjs",
+    "test": "node --test",
+    "collect": "node --env-file-if-exists=.env scripts/collect.mjs",
+    "experiment": "node scripts/experiment.mjs",
+    "collect:area": "node --env-file-if-exists=.env scripts/collect-area.mjs",
+    "collect:routes": "node --env-file-if-exists=.env scripts/collect-routes.mjs",
+    "observe": "node --env-file-if-exists=.env scripts/observe-arrivals.mjs",
+    "build": "node scripts/build.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "validate": "node scripts/validate-sim.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.144.0"
+  }
+}

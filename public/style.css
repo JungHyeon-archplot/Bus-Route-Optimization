@@ -1,0 +1,190 @@
+:root{
+ --asphalt:#24282c;--asphalt-2:#33393f;--curb:#eef1ee;--paper:#fbfbf8;--navy:#1f3a5f;--navy-soft:#e8eef6;--amber:#ffb000;
+ --ink:#1d2328;--muted:#5d6872;--line:#dde3df;--danger:#d64532;
+ --r:10px;--r-sm:6px;--panel:392px;
+ --shadow:0 6px 24px rgba(20,24,28,.22),0 1px 3px rgba(20,24,28,.2);
+ font-family:"IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif;color:var(--ink);background:var(--curb);font-synthesis:none;line-height:1.55;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:flex;flex-direction:column;background:var(--curb)}
+a{color:var(--navy)}
+button,select{font:inherit}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+input[type=range]{accent-color:var(--navy);width:100%}
+output{font-variant-numeric:tabular-nums}
+
+/* Top bar */
+.bar{background:var(--asphalt);color:#eef1ef;padding:10px 20px;display:flex;align-items:center;gap:16px;min-height:52px}
+.bar h1{font-size:17px;margin:0;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:10px}
+.bar h1::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px rgba(255,176,0,.2)}
+.bar p{margin:0;font-size:14px;color:#aeb8b3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Layout: the map is the page, the panel is its control desk. */
+.sim-layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) var(--panel)}
+.map-wrap{position:relative;min-height:0;overflow:hidden}
+#route-map{position:absolute;inset:0;background:#e4e8e5}
+.map-error{position:absolute;left:16px;right:16px;top:96px;margin:0;z-index:4;padding:10px 14px;border-radius:var(--r-sm);background:#fff4f2;color:#9c2b1c;font-size:14px;box-shadow:var(--shadow)}
+.map-error:empty{display:none}
+
+/* Floating map controls share one dark "arrival board" skin. */
+.hud,.playbar,.legend{position:absolute;z-index:3;background:rgba(36,40,44,.92);color:#eef1ef;border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(6px)}
+.hud{left:16px;top:16px;display:grid;grid-template-columns:repeat(4,auto);padding:4px}
+.hud div{display:flex;flex-direction:column;gap:2px;padding:8px 14px;border-left:1px solid rgba(255,255,255,.1)}
+.hud div:first-child{border-left:0}
+.hud span{font-size:12px;color:#aeb8b3;white-space:nowrap}
+.hud strong{font-size:24px;line-height:1.1;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(255,176,0,.35)}
+.hud div.alert strong{color:#ff7a66;text-shadow:0 0 12px rgba(255,90,70,.45)}
+
+.playbar{left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px}
+.playbar button{border:0;cursor:pointer;display:grid;place-items:center;border-radius:50%;color:inherit;background:transparent}
+.playbar svg{width:22px;height:22px;fill:currentColor}
+.playbar .play{width:48px;height:48px;background:var(--amber);color:var(--asphalt)}
+.playbar .play:hover{background:#ffc233}
+.playbar .play .i-pause,.playbar .play.playing .i-play{display:none}
+.playbar .play.playing .i-pause{display:inline}
+.playbar .icon{width:40px;height:40px}
+.playbar .icon:hover{background:rgba(255,255,255,.1)}
+.speed{display:flex;background:rgba(255,255,255,.08);border-radius:999px;padding:3px;margin-left:4px}
+.speed input{position:absolute;opacity:0;pointer-events:none}
+.speed span{display:block;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;color:#cfd6d2;font-variant-numeric:tabular-nums}
+.speed input:checked+span{background:#eef1ef;color:var(--asphalt)}
+.speed input:focus-visible+span{outline:3px solid var(--amber)}
+
+.legend{left:16px;bottom:20px;list-style:none;margin:0;padding:10px 14px;font-size:12px;display:flex;flex-direction:column;gap:6px;color:#cfd6d2}
+.legend li{display:flex;align-items:center;gap:8px}
+
+/* Control panel */
+.panel{background:var(--paper);border-left:1px solid var(--line);overflow:auto;padding:0 20px 24px;min-width:0}
+.panel section,.panel details{padding:18px 0;border-bottom:1px solid var(--line)}
+.panel h2{font-size:14px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel h2 output{font-size:15px;color:var(--navy);font-weight:700}
+.panel select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;color:var(--ink);font-size:14px}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.choices{display:flex;flex-direction:column;gap:6px}
+.choices label{position:relative;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer;background:#fff;transition:border-color .15s,background .15s}
+.choices label:hover{border-color:#b9c3be}
+.choices label:has(input:checked){border-color:var(--navy);background:var(--navy-soft)}
+.choices input{margin:3px 0 0;accent-color:var(--navy);flex:none}
+.choices span{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:1px;line-height:1.45}
+.choices b{font-size:14px;color:var(--ink);font-weight:500}
+.choices em{font-style:normal}
+details summary{cursor:pointer;font-size:14px;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;margin-right:4px}
+details[open] summary::after{transform:rotate(-135deg)}
+details[open] summary{margin-bottom:10px}
+label.inline{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:10px;flex-wrap:wrap}
+label.inline input[type=range]{flex:1;min-width:120px}
+label.inline select{width:auto;padding:6px 10px}
+
+/* Results as bars: one glance compares the three ways of stopping. */
+.bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.bars li.hint{padding:8px 2px}
+.bars label{position:relative;display:flex;flex-direction:column;gap:5px;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;cursor:pointer;transition:border-color .15s,background .15s}
+.bars label:hover{border-color:#b9c3be}
+.bars input{position:absolute;left:12px;top:12px;margin:0;accent-color:var(--navy)}
+.bars input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.bars li.current label{border-color:var(--navy);background:var(--navy-soft);box-shadow:inset 3px 0 0 var(--navy)}
+.bars label>div:first-of-type{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:500}
+.bars b{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}
+.bars .track{height:8px;border-radius:999px;background:#e3e8e5;overflow:hidden}
+.bars .track i{display:block;height:100%;min-width:2px;border-radius:999px;background:#8a96a0}
+.bars li.current .track i{background:var(--navy)}
+.bars small{font-size:12px;color:var(--muted);line-height:1.4}
+
+.assign{list-style:none;margin:10px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13px}
+.assign li{display:flex;gap:8px;align-items:center}
+.berth{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:5px;color:#fff;font-weight:700;font-size:12px;flex:none}
+#conflict{width:100%;display:block;margin-top:6px}
+#conflict .edge{stroke:#b4bcb8}
+#conflict .node text{fill:#fff;font-size:14px;font-weight:700}
+#obs-strip{width:100%;display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);margin-top:8px}
+#obs-strip .obs-axis{stroke:var(--line);stroke-width:2}
+#obs-strip .obs-label{font-size:12px;fill:var(--muted)}
+.panel footer{padding-top:18px;line-height:1.6}
+
+/* Summary card: the answer stays in view while conditions change. */
+.summary{position:sticky;top:0;z-index:2;background:var(--paper);padding:16px 0 12px!important;box-shadow:0 8px 12px -12px rgba(20,24,28,.35)}
+.summary-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.summary-head h2{margin:0!important;font-size:14.5px}
+.summary-hint{margin:4px 0 10px!important}
+.summary #result-note{margin:8px 0 0}
+.record-btn{flex:none;border:0;border-radius:999px;padding:7px 14px;background:var(--amber);color:var(--asphalt);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.record-btn:hover{background:#ffc233}
+.record-btn:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+
+/* Panel tabs */
+.panel-tabs{display:flex;gap:4px;margin:14px 0 2px;padding:3px;background:#e9edea;border-radius:999px}
+.panel-tabs button{flex:1;border:0;background:transparent;border-radius:999px;padding:7px 8px;font:inherit;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap}
+.panel-tabs [aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,24,28,.18)}
+.panel-tabs .count{display:inline-block;min-width:1.6em;padding:0 5px;margin-left:2px;border-radius:999px;background:var(--navy);color:#fff;font-size:11px;line-height:1.6}
+.panel-tabs .count:empty{display:none}
+.range-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:2px}
+
+/* First-visit guide over the map */
+.guide{position:absolute;z-index:3;right:16px;top:16px;max-width:300px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px 12px;border-top:4px solid var(--amber)}
+.guide ol{margin:0;padding-left:1.3em;font-size:13.5px;line-height:1.6}
+.guide li+li{margin-top:4px}
+.guide button{margin-top:10px;width:100%;border:0;border-radius:var(--r-sm);padding:8px;background:var(--navy);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+
+/* Problem log */
+.table-wrap{overflow:auto;margin-top:6px}
+.panel table{width:100%;border-collapse:collapse;font-size:12.5px}
+.panel th,.panel td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.panel th{font-weight:500;color:var(--muted);white-space:nowrap;font-size:12px}
+.panel td:not(:first-child){white-space:nowrap}
+.log-share{font-size:13px;margin:10px 0;padding:10px 12px;border-radius:var(--r-sm);background:#fff6e0;border-left:3px solid var(--amber);color:var(--ink)}
+.log-share:empty{display:none}
+details.inner{padding:10px 0 0;border:0}
+details.inner summary{font-size:13px;font-weight:500;color:var(--navy)}
+.download{margin-top:12px;width:100%;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--navy);background:#fff;color:var(--navy);font-weight:500;cursor:pointer}
+.download:hover{background:var(--navy-soft)}
+.log-title{font-size:13px;margin:16px 0 6px;color:var(--muted);font-weight:700}
+.live-log{list-style:none;margin:0;padding:0;max-height:180px;overflow:auto;font-size:12.5px;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.live-log:empty::before{content:"재생하면 기다린 버스가 여기에 쌓입니다";display:block;padding:10px 12px;color:var(--muted)}
+.live-log li{padding:6px 12px;border-top:1px solid var(--line)}
+.live-log li:first-child{border-top:0;background:#fff4f2}
+
+/* Experiment records */
+.count{font-size:12px;font-weight:500;color:var(--muted)}
+#sim-seed{width:5.5em;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r-sm);font:inherit;font-size:14px;background:#fff}
+label.inline .hint{margin:0;flex-basis:100%}
+.records{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.records li{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.records li.empty{display:block;color:var(--muted);font-size:13px;border-style:dashed}
+.records div:first-child{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.records b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.records .track{grid-column:1/-1;height:8px;border-radius:999px;background:#e3e8e5;overflow:hidden}
+.records .track i{display:block;height:100%;min-width:2px;border-radius:999px;background:var(--navy)}
+.records small{font-size:12px;color:var(--muted)}
+.records .remove{border:0;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0 2px;text-decoration:underline}
+.records .remove:hover{color:var(--danger)}
+.record-actions{display:grid;grid-template-columns:3fr 2fr;gap:8px}
+.team-fields{display:grid;gap:4px;margin-top:6px}
+.team-fields input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r-sm);font:inherit;font-size:14px;background:#fff}
+.record-status{font-size:13px;margin:8px 0 0;color:#1e7a55;min-height:1.2em}
+.record-status.bad{color:var(--danger)}
+
+/* Map overlays drawn by route-map.js */
+.bus-dot{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.45);flex:none}
+.bus-dot.queued{border-color:#fff;box-shadow:0 0 0 3px var(--danger),0 0 10px 3px rgba(214,69,50,.6);width:16px;height:16px}
+.live-dot{display:inline-block;width:11px;height:11px;border-radius:2px;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--ink);transform:rotate(45deg);flex:none}
+.focus-stop{display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.focus-stop span{background:var(--amber);color:var(--asphalt);font-weight:700;font-size:13px;padding:5px 10px;border-radius:999px;white-space:nowrap;box-shadow:var(--shadow)}
+.focus-stop::after{content:"";width:0;height:0;border:7px solid transparent;border-top-color:var(--amber);margin-top:-1px}
+
+@media (max-width:900px){
+ .summary{position:static;box-shadow:none}
+ .guide{left:10px;right:10px;top:auto;bottom:80px;max-width:none}
+ body{height:auto}
+ .sim-layout{grid-template-columns:1fr}
+ .map-wrap{height:64vh;min-height:380px}
+ .panel{border-left:0;border-top:1px solid var(--line);overflow:visible}
+ .legend{display:none}
+ .bar p{display:none}
+ .hud{left:10px;right:10px;top:10px;grid-template-columns:repeat(4,1fr)}
+ .hud div{padding:6px 8px}.hud span{font-size:11px;white-space:normal;line-height:1.3}.hud strong{font-size:20px}
+ .playbar{bottom:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

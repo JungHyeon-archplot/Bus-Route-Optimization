@@ -1,0 +1,4 @@
+[
+ {"id":"study-0923","meetingDate":"2026-09-23","kind":"study-area","hubs":[{"id":"S1","name":"충무로역"},{"id":"S2","name":"동국대후문"},{"id":"S3","name":"정문"},{"id":"S4","name":"동대입구"},{"id":"S5","name":"장충단공원"},{"id":"S6","name":"필동주민센터"}]},
+ {"id":"illustration-0927","meetingDate":"2026-09-27","kind":"illustrative","hubs":[{"id":"A","name":"충무로역"},{"id":"B","name":"퇴계로5가"},{"id":"C","name":"동국대후문 인근"},{"id":"D","name":"동대입구역"},{"id":"E","name":"국립극장"},{"id":"F","name":"남산예장버스환승주차장"}]}
+]
