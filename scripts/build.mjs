@@ -8,7 +8,7 @@ await mkdir(dist,{recursive:true});
 for(const entry of await readdir(dist))await rm(new URL(entry,dist),{recursive:true,force:true});
 await mkdir(new URL('public/',dist),{recursive:true});await mkdir(new URL('src/',dist),{recursive:true});
 await cp(new URL('public/index.html',root),new URL('index.html',dist));
-for(const file of ['berths.js','route-map.js','sim-log.js','map.js','observation.js','style.css'])await cp(new URL('public/'+file,root),new URL('public/'+file,dist));
+for(const file of ['berths.js','route-map.js','sim-log.js','ui.js','map.js','observation.js','style.css'])await cp(new URL('public/'+file,root),new URL('public/'+file,dist));
 for(const file of ['network.js','coloring.js','routesim.js','observation.js'])await cp(new URL('src/'+file,root),new URL('src/'+file,dist));
 for(const file of ['stations.json','routes.json'])await cp(new URL('data/public/'+file,root),new URL(file,dist));
 const observation=new URL('data/public/observations/latest.json',root);

@@ -19,71 +19,76 @@
   <button id="sim-reset" class="icon" aria-label="처음으로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.3 4H3l3.5-4L10 9H7.9A5 5 0 1 0 12 7z"/></svg></button>
   <div class="speed" role="radiogroup" aria-label="빠르기"><label><input type="radio" name="rate" value="10"><span>10×</span></label><label><input type="radio" name="rate" value="30" checked><span>30×</span></label><label><input type="radio" name="rate" value="90"><span>90×</span></label></div>
  </div>
+ <div id="guide" class="guide" hidden>
+  <ol><li>패널에서 <b>정류장</b>과 조건을 고르고</li><li>결과의 <b>방식</b>을 눌러 비교한 뒤</li><li><b>▶ 재생</b>(스페이스바)으로 지도에서 확인하세요</li></ol>
+  <button id="guide-close">알겠어요</button></div>
  <ul class="legend"><li><span class="bus-dot" style="background:#1f3a5f"></span>시뮬레이션 버스</li><li><span class="bus-dot queued" style="background:#1f3a5f"></span>자리를 기다리는 버스</li><li><span class="live-dot" style="background:#1f3a5f"></span>지금 실제 버스</li></ul>
 </div>
 
-<aside class="panel" aria-label="시뮬레이션 조건">
- <section><h2>정류장</h2><select id="berth-stop" aria-label="정류장"></select><p id="stop-note" class="hint"></p></section>
-
- <section><h2>버스가 서는 방식</h2>
-  <div class="choices" role="radiogroup" aria-label="버스가 서는 방식">
-   <label><input type="radio" name="rule" value="single" checked><span><b>설 자리 1곳</b>모든 버스가 한 자리를 차례로 씁니다</span></label>
-   <label><input type="radio" name="rule" value="pooled"><span><b>설 자리 <em class="n-berths">여러</em>곳, 빈 곳 아무 데나</b>비어 있는 자리에 바로 섭니다</span></label>
-   <label><input type="radio" name="rule" value="colored"><span><b>설 자리 <em class="n-berths">여러</em>곳, 노선별 지정</b>같이 달리는 노선끼리 다른 자리를 받습니다</span></label>
-  </div></section>
-
- <section><h2>버스가 오는 시점</h2>
-  <div class="choices" role="radiogroup" aria-label="버스가 오는 시점">
-   <label><input type="radio" name="timing" value="random" checked><span><b>지금처럼 제각각</b>노선마다 따로 출발합니다</span></label>
-   <label><input type="radio" name="timing" value="spread"><span><b>노선끼리 간격 두기</b>이 정류장에 노선이 번갈아 도착하도록 출발 시각을 맞춥니다(9/27 회의안)</span></label>
-  </div></section>
-
- <section><h2>한 대가 서 있는 시간 <output id="berth-dwell-out">40초</output></h2>
-  <input id="berth-dwell" type="range" min="15" max="60" step="5" value="40" aria-label="한 대가 서 있는 시간"><p class="hint">승객이 많을수록 깁니다.</p></section>
-
- <section><h2>2시간 돌렸을 때 버스가 기다린 시간</h2>
-  <ul id="result-bars" class="bars"><li class="hint">계산 중…</li></ul>
+<aside class="panel" aria-label="시뮬레이션 조건과 결과">
+ <section class="summary" aria-labelledby="summary-title">
+  <div class="summary-head"><h2 id="summary-title">2시간 돌렸을 때 버스가 기다린 시간</h2><button id="record-add" class="record-btn" title="지금 조건과 결과를 팀 기록에 남깁니다">기록하기</button></div>
+  <p class="hint summary-hint">방식을 누르면 지도도 그 방식으로 바뀝니다.</p>
+  <ul id="result-bars" class="bars" role="radiogroup" aria-label="버스가 서는 방식"><li class="hint">계산 중…</li></ul>
   <p id="result-note" class="hint"></p>
-  <label class="inline">난수 seed <input id="sim-seed" type="number" min="1" max="9999" step="1" value="1" inputmode="numeric"><span class="hint">버스 출발 위치를 바꿉니다. 같은 seed는 같은 결과를 냅니다. "노선끼리 간격 두기"는 출발 위치가 정해져 있어 seed와 무관합니다.</span></label>
-  <button id="record-add" class="download">지금 조건의 결과 기록하기</button></section>
-
- <section><h2>실험 기록 <span id="record-count" class="count"></span></h2>
-  <p class="hint">기록한 결과를 나란히 비교합니다. 막대는 2시간 동안 기다린 시간 합입니다. <span id="record-mode"></span></p>
-  <div id="team-fields" class="team-fields" hidden>
-   <label class="inline">기록하는 사람 <input id="record-by" type="text" maxlength="20" placeholder="이름(선택)" autocomplete="off"></label>
-   <label class="inline" id="team-code-row">팀 코드 <input id="team-code" type="password" maxlength="40" autocomplete="off" placeholder="기록·삭제에 필요"></label>
-  </div>
   <p id="record-status" class="record-status" role="status"></p>
-  <ol id="record-list" class="records"></ol>
-  <div class="record-actions"><button id="record-csv" class="download">기록 CSV 받기</button><button id="record-refresh" class="download">새로 고침</button></div></section>
+ </section>
 
- <section><h2>문제가 생긴 곳 (기록)</h2>
-  <p class="hint">고른 방식으로 2시간 돌렸을 때 기다림이 어디서 생겼는지입니다. 앞에 있던 노선은 그 버스가 도착했을 때 자리를 쓰고 있었거나 먼저 줄 서 있던 버스입니다.</p>
-  <p id="log-share" class="log-share"></p>
-  <div class="table-wrap"><table><thead><tr><th>앞 버스 → 기다린 버스</th><th>횟수</th><th>기다린 시간</th><th>함께 달림</th></tr></thead><tbody id="log-pairs"></tbody></table></div>
-  <details class="inner"><summary>노선별로 보기</summary><div class="table-wrap"><table><thead><tr><th>노선</th><th>도착</th><th>기다림</th><th>기다린 시간</th></tr></thead><tbody id="log-routes"></tbody></table></div></details>
-  <button id="log-download" class="download">세 방식 2시간 기록 CSV 받기</button>
-  <h3 class="log-title">지도에서 방금 생긴 기다림</h3><ol id="log-live" class="live-log" aria-live="off"></ol></section>
+ <nav class="panel-tabs" role="tablist" aria-label="패널">
+  <button role="tab" id="ptab-cond" aria-controls="pane-cond" aria-selected="true">조건</button>
+  <button role="tab" id="ptab-why" aria-controls="pane-why" aria-selected="false" tabindex="-1">원인 분석</button>
+  <button role="tab" id="ptab-rec" aria-controls="pane-rec" aria-selected="false" tabindex="-1">팀 기록 <span id="record-count" class="count"></span></button>
+ </nav>
 
- <details><summary>노선별 자리 배정 보기</summary>
-  <p class="hint">정류장을 여러 곳 함께 지나는 두 노선을 선으로 잇고, 이어진 노선끼리 다른 자리를 줍니다. 필요한 자리 수는 가능한 배정을 모두 따져 구한 최소값입니다.</p>
-  <ul id="assign-list" class="assign"></ul>
-  <svg id="conflict" viewBox="0 0 460 420" role="img" aria-label="함께 달리는 노선 연결 그림"></svg>
-  <label class="inline">함께 달린다고 볼 기준: 공유 정류장 <input id="berth-shared" type="range" min="2" max="5" value="3"><output id="berth-shared-out">3곳 이상</output></label>
-  <p id="coloring-note" class="hint"></p></details>
+ <div id="pane-cond" role="tabpanel" aria-labelledby="ptab-cond">
+  <section><h2>정류장</h2><select id="berth-stop" aria-label="정류장"></select><p id="stop-note" class="hint"></p></section>
+  <section><h2>버스가 오는 시점</h2>
+   <div class="choices" role="radiogroup" aria-label="버스가 오는 시점">
+    <label><input type="radio" name="timing" value="random" checked><span><b>지금처럼 제각각</b>노선마다 따로 출발합니다</span></label>
+    <label><input type="radio" name="timing" value="spread"><span><b>노선끼리 간격 두기</b>노선이 번갈아 도착하도록 출발 시각을 맞춥니다(9/27 회의안)</span></label>
+   </div></section>
+  <section><h2>한 대가 서 있는 시간 <output id="berth-dwell-out">40초</output></h2>
+   <input id="berth-dwell" type="range" min="15" max="60" step="5" value="40" aria-label="한 대가 서 있는 시간"><div class="range-ends"><span>15초 · 한산</span><span>60초 · 붐빔</span></div></section>
+  <details><summary>노선별 자리 배정 보기</summary>
+   <p class="hint">정류장을 여러 곳 함께 지나는 두 노선을 선으로 잇고, 이어진 노선끼리 다른 자리를 줍니다. 필요한 자리 수는 가능한 배정을 모두 따져 구한 최소값입니다.</p>
+   <ul id="assign-list" class="assign"></ul>
+   <svg id="conflict" viewBox="0 0 460 420" role="img" aria-label="함께 달리는 노선 연결 그림"></svg>
+   <p id="coloring-note" class="hint"></p></details>
+  <details><summary>고급 설정</summary>
+   <label class="inline">함께 달린다고 볼 기준: 공유 정류장 <input id="berth-shared" type="range" min="2" max="5" value="3"><output id="berth-shared-out">3곳 이상</output></label>
+   <label class="inline">난수 seed <input id="sim-seed" type="number" min="1" max="9999" step="1" value="1" inputmode="numeric"><span class="hint">버스 출발 위치를 바꿉니다. 같은 seed는 같은 결과를 냅니다. "노선끼리 간격 두기"는 seed와 무관합니다.</span></label></details>
+  <details><summary>지금 실제 버스 겹쳐 보기</summary>
+   <label class="inline"><input id="live-toggle" type="checkbox"> 켜기</label>
+   <label class="inline">갱신 <select id="live-interval"><option value="10">10초</option><option value="15" selected>15초</option><option value="30">30초</option><option value="60">60초</option></select></label>
+   <p id="live-status" class="hint">서울시 버스는 약 20초마다 위치를 보냅니다. 하루 호출 한도(1,000회)가 있어 간격이 짧을수록 볼 수 있는 시간이 줄어듭니다.</p></details>
+  <footer class="hint"><span id="sim-source"></span> 버스 속도는 보통 정류장 정차까지 포함한 평균 시속 15km로, 차량 수는 노선 길이와 계획 배차간격으로 정했습니다. 줄은 고른 정류장에서만 계산합니다. 관광·심야 노선은 뺐습니다. <span id="sim-skipped"></span></footer>
+ </div>
 
- <details><summary>지금 실제 버스 겹쳐 보기</summary>
-  <label class="inline"><input id="live-toggle" type="checkbox"> 켜기</label>
-  <label class="inline">갱신 <select id="live-interval"><option value="10">10초</option><option value="15" selected>15초</option><option value="30">30초</option><option value="60">60초</option></select></label>
-  <p id="live-status" class="hint">서울시 버스는 약 20초마다 위치를 보냅니다. 하루 호출 한도(1,000회)가 있어 간격이 짧을수록 볼 수 있는 시간이 줄어듭니다.</p></details>
+ <div id="pane-why" role="tabpanel" aria-labelledby="ptab-why" hidden>
+  <section><h2>누가 누구 뒤에서 기다렸나</h2>
+   <p class="hint">지금 고른 방식으로 2시간 돌렸을 때입니다. 앞 버스는 그 버스가 도착했을 때 자리를 쓰고 있었거나 먼저 줄 서 있던 버스입니다.</p>
+   <p id="log-share" class="log-share"></p>
+   <div class="table-wrap"><table><thead><tr><th>앞 버스 → 기다린 버스</th><th>횟수</th><th>기다린 시간</th><th>함께 달림</th></tr></thead><tbody id="log-pairs"></tbody></table></div>
+   <details class="inner"><summary>노선별로 보기</summary><div class="table-wrap"><table><thead><tr><th>노선</th><th>도착</th><th>기다림</th><th>기다린 시간</th></tr></thead><tbody id="log-routes"></tbody></table></div></details>
+   <button id="log-download" class="download">세 방식 2시간 버스별 기록 CSV</button></section>
+  <section><h2>지도에서 방금 생긴 기다림</h2><ol id="log-live" class="live-log" aria-live="off"></ol></section>
+  <section><h2>실제로 관측한 도착</h2>
+   <p id="obs-summary" class="hint">관측 자료를 불러오는 중입니다.</p>
+   <svg id="obs-strip" viewBox="0 0 720 110" role="img" aria-label="관측한 버스 통과 시각"></svg>
+   <p id="obs-note" class="hint"></p></section>
+ </div>
 
- <details><summary>실제로 관측한 도착</summary>
-  <p id="obs-summary" class="hint">관측 자료를 불러오는 중입니다.</p>
-  <svg id="obs-strip" viewBox="0 0 720 110" role="img" aria-label="관측한 버스 통과 시각"></svg>
-  <p id="obs-note" class="hint"></p></details>
-
- <footer class="hint"><span id="sim-source"></span> 버스 속도는 보통 정류장 정차까지 포함한 평균 시속 15km로, 차량 수는 노선 길이와 계획 배차간격으로 정했습니다. 줄은 고른 정류장에서만 계산합니다. 관광·심야 노선은 뺐습니다. <span id="sim-skipped"></span></footer>
+ <div id="pane-rec" role="tabpanel" aria-labelledby="ptab-rec" hidden>
+  <section><h2>실험 기록</h2>
+   <p class="hint">위의 "기록하기"로 남긴 결과를 나란히 비교합니다. 막대는 2시간 동안 기다린 시간 합입니다. <span id="record-mode"></span></p>
+   <div id="team-fields" class="team-fields" hidden>
+    <label class="inline">기록하는 사람 <input id="record-by" type="text" maxlength="20" placeholder="이름(선택)" autocomplete="off"></label>
+    <label class="inline" id="team-code-row">팀 코드 <input id="team-code" type="password" maxlength="40" autocomplete="off" placeholder="기록·삭제에 필요"></label>
+   </div>
+   <ol id="record-list" class="records"></ol>
+   <div class="record-actions"><button id="record-csv" class="download">기록 CSV 받기</button><button id="record-refresh" class="download">새로 고침</button></div></section>
+ </div>
 </aside>
 </main>
-<script type="module" src="/public/berths.js"></script><script type="module" src="/public/observation.js"></script>
+<script type="module" src="/public/berths.js"></script><script type="module" src="/public/ui.js"></script><script type="module" src="/public/observation.js"></script>
 </body></html>

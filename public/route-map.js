@@ -31,20 +31,23 @@ function rebuildSim(){
 // Same simulation, run headless for 2 hours under each way of stopping, so the table matches what the map shows.
 function renderTable(list){
  const {focus,assignment,colors,dwell,seed}=params,list0=$('result-bars');
- const rows=[['single','설 자리 1곳'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`],['colored',`설 자리 ${colors}곳 · 노선별 지정`]]
-  .map(([key,label])=>({key,label,s:runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed,timing})}));
+ const rows=[['single','설 자리 1곳','모든 버스가 한 자리를 차례로 씁니다'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`,'비어 있는 자리에 바로 섭니다'],['colored',`설 자리 ${colors}곳 · 노선별 지정`,'같이 달리는 노선끼리 다른 자리를 받습니다']]
+  .map(([key,label,help])=>({key,label,help,s:runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed,timing})}));
  const max=Math.max(1,...rows.map(row=>row.s.totalWait));
  list0.replaceChildren();
- for(const {key,label,s} of rows){
+ // Each result row is also the switch for that way of stopping: compare and choose in one place.
+ for(const {key,label,help,s} of rows){
   const li=document.createElement('li');if(key===rule)li.className='current';
+  const pick=document.createElement('label'),input=document.createElement('input');
+  input.type='radio';input.name='rule';input.value=key;input.checked=key===rule;
   const head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b');
   name.textContent=label;value.textContent=s.totalWait<1?'0초':`${Math.floor(s.totalWait/60)}분 ${Math.round(s.totalWait%60)}초`;head.append(name,value);
   const track=document.createElement('div'),fill=document.createElement('i');track.className='track';fill.style.width=(s.totalWait/max*100)+'%';track.append(fill);
-  const meta=document.createElement('small');meta.textContent=`${s.served}대 중 ${s.waited}대가 기다림 · 가장 긴 줄 ${s.maxQueue}대`;
-  li.append(head,track,meta);list0.append(li);
+  const meta=document.createElement('small');meta.textContent=`${help} · ${s.served}대 중 ${s.waited}대 기다림 · 가장 긴 줄 ${s.maxQueue}대`;
+  pick.append(input,head,track,meta);li.append(pick);list0.append(li);
  }
  renderLog(rows,logContext());
- $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, 난수 seed ${seed}. 굵은 줄이 지도에서 보고 있는 조건입니다.`;
+ $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, seed ${seed}.`;
 }
 
 function logContext(){
@@ -136,8 +139,11 @@ export async function updateRouteMap(next){
  }catch(error){$('route-map-error').textContent=error.message;}
 }
 
-for(const input of document.querySelectorAll('input[name=rule],input[name=timing]'))input.addEventListener('change',()=>{
- rule=document.querySelector('input[name=rule]:checked').value;timing=document.querySelector('input[name=timing]:checked').value;
+// Delegated: the rule radios are re-created with every result update.
+document.addEventListener('change',event=>{
+ if(event.target.name!=='rule'&&event.target.name!=='timing')return;
+ rule=document.querySelector('input[name=rule]:checked')?.value??rule;timing=document.querySelector('input[name=timing]:checked').value;
+ for(const li of document.querySelectorAll('#result-bars li'))li.classList.toggle('current',li.querySelector('input')?.value===rule);
  if(sim)rebuildSim();
  else if(routesData&&params)renderTable(params.routeIds.map(id=>preps.get(id)).filter(Boolean)); // no map: numbers only
 });

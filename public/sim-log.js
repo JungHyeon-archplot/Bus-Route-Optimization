@@ -1,4 +1,5 @@
 import {summarizeLog} from '/src/routesim.js';
+import {showTab} from '/public/ui.js';
 const $=id=>document.getElementById(id);
 const clock=seconds=>`${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
 const secs=value=>value<1?'0초':value<60?`${Math.round(value)}초`:`${Math.floor(value/60)}분 ${Math.round(value%60)}초`;
@@ -77,7 +78,7 @@ async function api(method,path,body){
 function renderRecords(){
  const list=$('record-list'),max=Math.max(1,...memory.map(record=>record.totalWait));
  list.replaceChildren();
- $('record-count').textContent=memory.length?`${memory.length}건`:'';
+ $('record-count').textContent=memory.length?String(memory.length):'';
  if(!memory.length){const li=document.createElement('li');li.className='empty';li.textContent='아직 기록이 없습니다. 조건을 고르고 "지금 조건의 결과 기록하기"를 누르세요.';list.append(li);return;}
  memory.forEach((record,index)=>{
   const li=document.createElement('li'),head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b'),track=document.createElement('div'),fill=document.createElement('i'),meta=document.createElement('small'),remove=document.createElement('button');
@@ -100,6 +101,8 @@ function renderRecords(){
 
 $('record-add').addEventListener('click',async()=>{
  if(!lastRuns)return;
+ // Team recording needs the code: open the records tab and point at the field instead of failing silently.
+ if(shared&&!$('team-code-row').hidden&&!$('team-code').value.trim()){showTab('ptab-rec');$('team-code').focus();status('팀 기록에 남기려면 "팀 기록" 탭에서 팀 코드를 먼저 입력하세요.',true);return;}
  const ctx=lastCtx,{s}=lastRuns.find(run=>run.key===ctx.rule),pairs=summarizeLog(s.log).pairs;
  const total=pairs.reduce((sum,pair)=>sum+pair.totalWait,0),linked=pairs.filter(pair=>ctx.linked(pair.blocker,pair.blocked)).reduce((sum,pair)=>sum+pair.totalWait,0);
  let record={savedAt:new Date().toISOString(),arsId:ctx.arsId,stopName:ctx.stopName,rule:ctx.rule,timing:ctx.timing,dwell:ctx.dwell,seed:ctx.seed,minShared:ctx.minShared,
@@ -109,7 +112,7 @@ $('record-add').addEventListener('click',async()=>{
   // Team records pile up and are never overwritten; the browser-only fallback still replaces the same conditions.
   if(shared)memory=[...memory,record];
   else saveLocal([...memory.filter(item=>keyOf(item)!==keyOf(record)),record]);
-  renderRecords();status(shared?'팀 기록에 저장했습니다.':'이 브라우저에 저장했습니다.');
+  renderRecords();status(shared?`팀 기록에 저장했습니다(${memory.length}건). "팀 기록" 탭에서 비교할 수 있습니다.`:'이 브라우저에 저장했습니다. "팀 기록" 탭에서 비교할 수 있습니다.');
  }catch(error){status(error.message,true);}
 });
 $('record-csv').addEventListener('click',()=>{

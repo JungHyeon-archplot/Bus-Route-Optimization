@@ -79,15 +79,19 @@ label.inline input[type=range]{flex:1;min-width:120px}
 label.inline select{width:auto;padding:6px 10px}
 
 /* Results as bars: one glance compares the three ways of stopping. */
-.bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-.bars li{display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:var(--r-sm)}
-.bars li.current{background:var(--navy-soft)}
-.bars div:first-child{display:flex;justify-content:space-between;gap:8px;font-size:13px}
-.bars b{font-variant-numeric:tabular-nums;white-space:nowrap}
-.bars .track{height:10px;border-radius:999px;background:#e3e8e5;overflow:hidden}
+.bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.bars li.hint{padding:8px 2px}
+.bars label{position:relative;display:flex;flex-direction:column;gap:5px;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;cursor:pointer;transition:border-color .15s,background .15s}
+.bars label:hover{border-color:#b9c3be}
+.bars input{position:absolute;left:12px;top:12px;margin:0;accent-color:var(--navy)}
+.bars input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.bars li.current label{border-color:var(--navy);background:var(--navy-soft);box-shadow:inset 3px 0 0 var(--navy)}
+.bars label>div:first-of-type{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:500}
+.bars b{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}
+.bars .track{height:8px;border-radius:999px;background:#e3e8e5;overflow:hidden}
 .bars .track i{display:block;height:100%;min-width:2px;border-radius:999px;background:#8a96a0}
 .bars li.current .track i{background:var(--navy)}
-.bars small{font-size:12px;color:var(--muted)}
+.bars small{font-size:12px;color:var(--muted);line-height:1.4}
 
 .assign{list-style:none;margin:10px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13px}
 .assign li{display:flex;gap:8px;align-items:center}
@@ -99,6 +103,30 @@ label.inline select{width:auto;padding:6px 10px}
 #obs-strip .obs-axis{stroke:var(--line);stroke-width:2}
 #obs-strip .obs-label{font-size:12px;fill:var(--muted)}
 .panel footer{padding-top:18px;line-height:1.6}
+
+/* Summary card: the answer stays in view while conditions change. */
+.summary{position:sticky;top:0;z-index:2;background:var(--paper);padding:16px 0 12px!important;box-shadow:0 8px 12px -12px rgba(20,24,28,.35)}
+.summary-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.summary-head h2{margin:0!important;font-size:14.5px}
+.summary-hint{margin:4px 0 10px!important}
+.summary #result-note{margin:8px 0 0}
+.record-btn{flex:none;border:0;border-radius:999px;padding:7px 14px;background:var(--amber);color:var(--asphalt);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.record-btn:hover{background:#ffc233}
+.record-btn:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+
+/* Panel tabs */
+.panel-tabs{display:flex;gap:4px;margin:14px 0 2px;padding:3px;background:#e9edea;border-radius:999px}
+.panel-tabs button{flex:1;border:0;background:transparent;border-radius:999px;padding:7px 8px;font:inherit;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap}
+.panel-tabs [aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,24,28,.18)}
+.panel-tabs .count{display:inline-block;min-width:1.6em;padding:0 5px;margin-left:2px;border-radius:999px;background:var(--navy);color:#fff;font-size:11px;line-height:1.6}
+.panel-tabs .count:empty{display:none}
+.range-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:2px}
+
+/* First-visit guide over the map */
+.guide{position:absolute;z-index:3;right:16px;top:16px;max-width:300px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px 12px;border-top:4px solid var(--amber)}
+.guide ol{margin:0;padding-left:1.3em;font-size:13.5px;line-height:1.6}
+.guide li+li{margin-top:4px}
+.guide button{margin-top:10px;width:100%;border:0;border-radius:var(--r-sm);padding:8px;background:var(--navy);color:#fff;font:inherit;font-size:13px;cursor:pointer}
 
 /* Problem log */
 .table-wrap{overflow:auto;margin-top:6px}
@@ -147,6 +175,8 @@ label.inline .hint{margin:0;flex-basis:100%}
 .focus-stop::after{content:"";width:0;height:0;border:7px solid transparent;border-top-color:var(--amber);margin-top:-1px}
 
 @media (max-width:900px){
+ .summary{position:static;box-shadow:none}
+ .guide{left:10px;right:10px;top:auto;bottom:80px;max-width:none}
  body{height:auto}
  .sim-layout{grid-template-columns:1fr}
  .map-wrap{height:64vh;min-height:380px}
