@@ -1,0 +1,12 @@
+title = "Bus simulator secret scan"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "A localStorage key name, not an API credential"
+regexTarget = "secret"
+regexes = ['''^bus-sim-records-v1$''']
