@@ -11,3 +11,9 @@ playwright-report/
 *.log
 __pycache__/
 .DS_Store
+
+# Local deployment credentials
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
