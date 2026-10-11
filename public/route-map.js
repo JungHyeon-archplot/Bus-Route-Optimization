@@ -17,7 +17,7 @@ const layout=key=>params.zones>1
 const options=key=>({focus:params.focus,assignment:params.assignment,...layout(key),dwell:params.dwell,seed:params.seed,timing,
  overtake:params.overtake,meterGap:params.meterGap,meterAt:50,
  // 연쇄 지연과 흔들림은 실측 몰림 정도에 맞춘 값(scripts/lane-experiment.mjs와 같음).
- cascade:true,noise:.45,startJitter:1,signal:true,tsp:params.tsp,holdRatio:params.holdRatio});
+ cascade:true,noise:params.calib.noise,startJitter:params.calib.startJitter,signal:true,tsp:params.tsp,holdRatio:params.holdRatio});
 const clock=s=>s<1?'0초':`${Math.floor(s/60)}분 ${Math.round(s%60)}초`;
 
 function rebuildSimMapOnly(){

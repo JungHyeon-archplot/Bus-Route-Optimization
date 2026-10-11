@@ -39,6 +39,7 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
     const file=pathname==='/'?'public/index.html':
       pathname==='/stations.json'?'data/public/stations.json':
       pathname==='/routes.json'?'data/public/routes.json':
+      pathname==='/calibration.json'?'data/public/calibration.json':
       pathname==='/ilsan/stations.json'?'data/public/ilsan/stations.json':
       pathname==='/ilsan/routes.json'?'data/public/ilsan/routes.json':
       pathname==='/observation.json'?'data/public/observations/latest.json':

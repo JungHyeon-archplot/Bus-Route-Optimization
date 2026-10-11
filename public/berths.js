@@ -5,7 +5,10 @@ const $=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
 const berthColors=['#2f6fde','#e0523c','#1e9e6a','#8a5cd1','#c98a00','#0f8fa8','#b8467e','#5e6b78'];
 const letter=i=>String.fromCharCode(65+i);
 const svg=(tag,attrs,text='')=>{const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);el.textContent=text;return el;};
-let dataset;
+let dataset,calibration={};
+// 실측 보정값(scripts/calibrate.mjs). 아직 없으면 9/30 충무로 실측 기준 기본값을 쓴다.
+const DEFAULT_CALIB={noise:.45,startJitter:1,note:'9/30 서울 실측(충무로)에 맞춘 기본값'};
+try{const response=await fetch('/calibration.json');if(response.ok)calibration=(await response.json()).areas??{};}catch{}
 const pick=name=>document.querySelector(`input[name=${name}]:checked`).value;
 
 function drawGraph({nodes,edges},assignment){
@@ -52,10 +55,16 @@ function render(){
  updateRouteMap({stop:graph.stop,focus:arsId,base:dataset.base,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors:berths,dwell,seed,minShared,palette:berthColors,
   overtake:pick('lane')==='free',meterGap:Number($('meter-gap').value),
   tsp:pick('tsp')==='1',holdRatio:Number(pick('hold')),zones:zones?2:1,passing:split==='pass',
-  areaStops:dataset.focusStops});
+  areaStops:dataset.focusStops,calib:calibFor(pick('area'))});
  $('meter-out').textContent=Number($('meter-gap').value)?$('meter-gap').value+'초 간격':'끔';
 }
 
+function calibFor(area){
+ const c=calibration[area||'seoul'];
+ const note=c?`${c.observation.match(/(\d{8})/)?.[1]?.replace(/(\d{4})(\d{2})(\d{2})/,'$1.$2.$3')??''} ${c.stop} 출근 시간 실측 ${c.minutes}분에 맞춤(승객 대기÷계획 실측 ${c.observed.ratio.toFixed(2)}, 시뮬레이션 ${c.simulated.ratio.toFixed(2)})`:DEFAULT_CALIB.note;
+ $('calib-note').textContent=`흔들림 보정: ${note}.`;
+ return c?{noise:c.noise,startJitter:c.startJitter}:DEFAULT_CALIB;
+}
 // 지역마다 자료 폴더가 다르다: 서울은 /, 일산은 /ilsan/.
 async function loadArea(){
  const area=pick('area'),base=area?`/${area}/`:'/';

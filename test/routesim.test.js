@@ -144,3 +144,11 @@ test('분리 정류장: 지나갈 공간이 있으면 뒤 정류장 버스가 �
  assert.ok(run(true)<1,'추월 공간 있음: 바로 앞 정류장에 섬');
  assert.ok(run(false)>=23,'추월 공간 없음: 뒤 정류장 버스가 떠날 때까지 기다림');
 });
+test('보정 지표: 고른 간격이면 승객대기÷계획 = 1, 몰리면 1보다 크다',async()=>{
+ const {metrics}=await import('../src/calibration.js');
+ const even=metrics({a:[0,600,1200,1800]},{a:600});
+ assert.equal(even.ratio,1);assert.equal(even.cv,0);
+ const bunched=metrics({a:[0,60,1200,1260,2400]},{a:600});
+ assert.ok(bunched.ratio>1.5&&bunched.cv>0.5);
+ assert.equal(metrics({a:[0,30],b:[100]},{a:600}).within,0.5);
+});

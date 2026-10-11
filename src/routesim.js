@@ -261,7 +261,7 @@ export function runFor(preps,options,seconds=7200){
  for(let t=0;t<seconds;t++)step(sim,1);
  // 승객 대기는 이 정류장에 서는 노선만 센다.
  const headways=Object.fromEntries(sim.buses.filter(bus=>bus.next!==Infinity).map(bus=>[bus.route,bus.headway]));
- return {...sim.stats,log:sim.log,passenger:passengerWait(sim.departures,headways)};
+ return {...sim.stats,log:sim.log,departures:sim.departures,passenger:passengerWait(sim.departures,headways)};
 }
 
 // Where the waiting came from: per route, and per blocking pair (who stood in front of whom).

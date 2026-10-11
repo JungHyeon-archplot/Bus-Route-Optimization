@@ -17,7 +17,11 @@ const {zoneOf,load}=splitRoutes(graph.nodes,volume,2);
 const split=passing=>({zones:2,berths:2,zoneOf,passing});
 // 공통: 추월 불가, 빈 곳 아무 데나, 연쇄 지연, 정류장 120m 앞 신호(주기 150초·녹색 60초).
 // 흔들림(noise .45·startJitter 1)은 승객 대기가 계획의 약 1.5배가 되도록 맞췄다(9/30 서울 실측 463번: 2.20분 ÷ 1.42분 = 1.55배).
-const base={focus:arsId,rule:'pooled',assignment,berths,dwell:40,overtake:false,cascade:true,noise:.45,startJitter:1,signal:true,meterAt:50};
+// 실측 보정값(data/public/calibration.json)이 있으면 그 지역 값을 쓴다.
+const calib=await read('data/public/calibration.json').then(c=>c.areas?.[process.argv[5]||'seoul'],()=>null);
+const {noise=.45,startJitter=1}=calib??{};
+console.log(`흔들림: noise ${noise} · startJitter ${startJitter} (${calib?calib.observation+' 실측 보정':'9/30 실측 기준 기본값'})`);
+const base={focus:arsId,rule:'pooled',assignment,berths,dwell:40,overtake:false,cascade:true,noise,startJitter,signal:true,meterAt:50};
 const cases=[
  ['현재 (대책 없음)',{}],
  ['노선별 지정 정차',{rule:'colored'}],
