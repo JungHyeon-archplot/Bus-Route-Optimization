@@ -108,11 +108,41 @@ label.inline select{width:auto;padding:6px 10px}
 .summary{position:sticky;top:0;z-index:2;background:var(--paper);padding:16px 0 12px!important;box-shadow:0 8px 12px -12px rgba(20,24,28,.35)}
 .summary-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .summary-head h2{margin:0!important;font-size:14.5px}
-.summary-hint{margin:4px 0 10px!important}
-.summary #result-note{margin:8px 0 0}
 .record-btn{flex:none;border:0;border-radius:999px;padding:7px 14px;background:var(--amber);color:var(--asphalt);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .record-btn:hover{background:#ffc233}
 .record-btn:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+
+/* Compact result rows: label | bus delay | passenger wait, bar underneath. */
+.calc{margin-left:auto;font-size:12px;color:var(--navy);font-weight:500}
+.calc::before{content:"";display:inline-block;width:10px;height:10px;margin-right:5px;border:2px solid var(--navy);border-right-color:transparent;border-radius:50%;vertical-align:-1px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.calc::before{animation:none}}
+.summary.busy .bars{opacity:.55}
+.bars-head,.bars label>div:first-of-type{display:grid;grid-template-columns:minmax(0,1fr) 78px 70px;gap:6px;align-items:baseline}
+.bars-head{font-size:11.5px;color:var(--muted);margin:10px 0 4px;padding:0 12px 0 34px}
+.bars-head span+span,.bars label>div:first-of-type b,.bars label>div:first-of-type i{text-align:right}
+.bars label>div:first-of-type i{font-style:normal;font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);white-space:nowrap}
+.bars label>div:first-of-type span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.base{font-size:13px;margin:10px 0 0;padding:8px 10px;border-radius:var(--r-sm);background:var(--navy-soft);color:var(--ink);line-height:1.5}
+.base:empty,.detail:empty{display:none}
+.base b{color:var(--navy)}
+.detail{margin:6px 0 0!important;font-size:12px;line-height:1.5}
+/* Conditions: label on the left, one-tap segmented choices on the right. */
+.row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;align-items:center;margin-top:8px}
+.row .lbl{font-size:13px;color:var(--muted)}
+.rng{display:flex;align-items:center;gap:6px}
+.rng input[type=range]{flex:1;min-width:0;accent-color:var(--navy)}
+.row output{flex:none;width:48px;text-align:right;font-size:13px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.seg{display:flex;background:#e9edea;border-radius:var(--r-sm);padding:3px;gap:3px}
+.seg label{flex:1;position:relative;cursor:pointer;min-width:0}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;text-align:center;padding:6px 4px;border-radius:4px;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg input:checked+span{background:#fff;color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(20,24,28,.18)}
+.seg input:focus-visible+span{outline:3px solid var(--amber);outline-offset:1px}
+.panel section>.seg{margin-bottom:8px}
+.link{border:0;background:none;color:var(--navy);font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;text-decoration:underline;padding:0}
+.explain{margin:4px 0 0;padding-left:1.1em;font-size:12.5px;color:var(--muted);line-height:1.55}
+.explain b{color:var(--ink);font-weight:500}
 
 /* Panel tabs */
 .panel-tabs{display:flex;gap:4px;margin:14px 0 2px;padding:3px;background:#e9edea;border-radius:999px}

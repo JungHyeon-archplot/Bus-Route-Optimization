@@ -6,6 +6,7 @@ const berthColors=['#2f6fde','#e0523c','#1e9e6a','#8a5cd1','#c98a00','#0f8fa8','
 const letter=i=>String.fromCharCode(65+i);
 const svg=(tag,attrs,text='')=>{const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);el.textContent=text;return el;};
 let dataset;
+const pick=name=>document.querySelector(`input[name=${name}]:checked`).value;
 
 function drawGraph({nodes,edges},assignment){
  const box=$('conflict');box.replaceChildren();
@@ -36,12 +37,11 @@ function render(){
  const graph=conflictGraph(dataset,arsId,{minShared});
  const {colors,assignment:needed}=colorGraph(graph.nodes,graph.edges);
  // 실제 정차면은 몇 곳뿐이다. 필요한 자리(색)가 더 많으면 색 번호를 정차면에 돌아가며 나눈다.
- const berths=Number($('berth-count').value),split=$('split').value;
+ const berths=Number(pick('berths')),split=pick('split');
  // 분리 정류장이면 노선 배정은 두 정류장(0 = 앞, 1 = 뒤), 아니면 색 번호를 정차면에 돌아가며 나눈 것.
  const byId=new Map(dataset.routes.map(r=>[r.id,r])),volume=Object.fromEntries(graph.nodes.map(n=>[n.id,60/(byId.get(n.id)?.termMinutes??10)]));
  const zones=split?splitRoutes(graph.nodes,volume,2):null;
  const assignment=zones?zones.zoneOf:Object.fromEntries(Object.entries(needed).map(([id,c])=>[id,c%berths]));
- $('berth-count-out').textContent=berths+'곳';
  for(const el of document.querySelectorAll('.n-berths'))el.textContent=colors;
  $('stop-note').textContent=`이 정류장에 서는 주간 노선 ${graph.nodes.length}개`;
  drawGraph(graph,needed);drawAssignments(graph.nodes,assignment);
@@ -50,14 +50,15 @@ function render(){
   :`이 정류장은 자리 ${colors}곳이면 나눌 수 있습니다.${colors>berths?` 실제 정차면 ${berths}곳에는 색을 돌아가며 나눠 배정했습니다.`:''}`;
  if(zones)$('coloring-note').textContent+=` 분리 정류장 배정(목록의 A = 앞, B = 뒤): 시간당 버스 앞 ${zones.load[0].toFixed(0)}대 · 뒤 ${zones.load[1].toFixed(0)}대.`;
  updateRouteMap({stop:graph.stop,focus:arsId,base:dataset.base,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors:berths,dwell,seed,minShared,palette:berthColors,
-  overtake:document.querySelector('input[name=lane]:checked').value==='free',meterGap:Number($('meter-gap').value),
-  tsp:$('its-tsp').checked,holdRatio:Number($('its-hold').value),zones:zones?2:1,passing:split==='pass'});
+  overtake:pick('lane')==='free',meterGap:Number($('meter-gap').value),
+  tsp:pick('tsp')==='1',holdRatio:Number(pick('hold')),zones:zones?2:1,passing:split==='pass',
+  areaStops:dataset.focusStops});
  $('meter-out').textContent=Number($('meter-gap').value)?$('meter-gap').value+'초 간격':'끔';
 }
 
 // 지역마다 자료 폴더가 다르다: 서울은 /, 일산은 /ilsan/.
 async function loadArea(){
- const area=$('area').value,base=area?`/${area}/`:'/';
+ const area=pick('area'),base=area?`/${area}/`:'/';
  try{
   const response=await fetch(base+'stations.json');if(!response.ok)throw new Error();
   dataset=await response.json();dataset.base=base;
@@ -65,13 +66,22 @@ async function loadArea(){
   const select=$('berth-stop');select.replaceChildren();
   const busy=overlapSummary(dataset).busiestStops.filter(({routes})=>routes.filter(route=>!NON_DAYTIME.has(route.typeCode)).length>=3).slice(0,12);
   for(const {stop,routes} of busy)select.append(new Option(`${stop.name} (${stop.arsId}) · 노선 ${routes.length}개`,stop.arsId));
+  dataset.focusStops=busy.map(({stop})=>[stop.lat,stop.lng]); // 지역을 바꾸면 지도가 이 정류장들이 다 보이게 옮겨 간다
   render();
  }catch{
   $('stop-note').textContent=area?'일산 자료가 없습니다. npm run collect:ilsan 으로 먼저 수집하세요.':'경유 노선 자료가 없습니다. npm run collect:area 로 먼저 수집하세요.';
  }
 }
-for(const id of ['berth-stop','berth-shared','berth-dwell','sim-seed','berth-count','meter-gap'])$(id).addEventListener('input',render);
-for(const input of document.querySelectorAll('input[name=lane]'))input.addEventListener('change',render);
-for(const id of ['its-tsp','its-hold','split'])$(id).addEventListener('change',render);
-$('area').addEventListener('change',loadArea);
+// 조건 탭의 모든 입력을 한곳에서 받는다. 출발 시각(timing)은 route-map.js가 직접 받는다.
+$('pane-cond').addEventListener('input',event=>{
+ const name=event.target.name;
+ if(name==='area')loadArea();else if(name!=='timing'&&event.target.id!=='live-interval'&&event.target.id!=='live-toggle')render();
+});
+$('measures-reset').addEventListener('click',()=>{
+ $('berth-dwell').value=40;$('meter-gap').value=0;
+ for(const [name,value] of [['tsp','0'],['hold','0']])document.querySelector(`input[name=${name}][value="${value}"]`).checked=true;
+ const random=document.querySelector('input[name=timing][value=random]');
+ if(!random.checked){random.checked=true;random.dispatchEvent(new Event('change',{bubbles:true}));}
+ render();
+});
 await loadArea();

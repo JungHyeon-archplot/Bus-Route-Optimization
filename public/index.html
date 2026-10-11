@@ -27,10 +27,11 @@
 
 <aside class="panel" aria-label="시뮬레이션 조건과 결과">
  <section class="summary" aria-labelledby="summary-title">
-  <div class="summary-head"><h2 id="summary-title">2시간 돌렸을 때 버스가 늦어진 시간</h2><button id="record-add" class="record-btn" title="지금 조건과 결과를 팀 기록에 남깁니다">기록하기</button></div>
-  <p class="hint summary-hint">방식을 누르면 지도도 그 방식으로 바뀝니다. 승객 대기는 이 정류장에서 승객 한 명이 버스를 기다리는 평균 시간입니다.</p>
+  <div class="summary-head"><h2 id="summary-title">결과 · 2시간</h2><span id="calc" class="calc" hidden>계산 중…</span><button id="record-add" class="record-btn" title="지금 조건과 결과를 팀 기록에 남깁니다">기록하기</button></div>
+  <div class="bars-head" aria-hidden="true"><span>방식 (누르면 지도도 바뀜)</span><span>버스 지연</span><span>승객 대기</span></div>
   <ul id="result-bars" class="bars" role="radiogroup" aria-label="버스가 서는 방식"><li class="hint">계산 중…</li></ul>
-  <p id="result-note" class="hint"></p>
+  <p id="result-base" class="base"></p>
+  <p id="result-detail" class="hint detail"></p>
   <p id="record-status" class="record-status" role="status"></p>
  </section>
 
@@ -41,32 +42,28 @@
  </nav>
 
  <div id="pane-cond" role="tabpanel" aria-labelledby="ptab-cond">
-  <section><h2>지역</h2><select id="area" aria-label="지역"><option value="">서울 신용산·삼각지 (한강대로 중앙차로)</option><option value="ilsan">고양 일산 중앙로 BRT</option></select></section>
-  <section><h2>정류장</h2><select id="berth-stop" aria-label="정류장"></select><p id="stop-note" class="hint"></p></section>
-  <section><h2>정류장 구조</h2>
-   <div class="choices" role="radiogroup" aria-label="정류장 구조">
-    <label><input type="radio" name="lane" value="lane" checked><span><b>추월차로 없음 (중앙차로)</b>앞차가 서 있으면 뒤차는 그 자리까지 못 가고, 승하차를 마쳐도 앞차가 떠나야 나갑니다</span></label>
-    <label><input type="radio" name="lane" value="free"><span><b>추월 가능 (비교용)</b>각 자리에 따로 들어가고 나갑니다</span></label>
-   </div>
-   <label class="inline">정차면 수 <input id="berth-count" type="range" min="1" max="4" value="3"><output id="berth-count-out">3곳</output></label>
-   <label class="inline">분리 정류장 <select id="split"><option value="">하나의 정류장</option><option value="pass">2곳으로 분리 · 사이에 추월 공간 있음</option><option value="nopass">2곳으로 분리 · 추월 공간 없음</option></select></label>
-   <p class="hint">분리하면 정차면 수는 분리 정류장마다의 수입니다. 노선은 시간당 버스 수가 반씩 되도록 배정합니다. 결과의 세 번째 줄이 분리 정류장, 두 번째 줄은 같은 정차면을 한 정류장에 일렬로 둔 경우입니다.</p></section>
-  <section><h2>진입 간격 통제 <output id="meter-out">끔</output></h2>
-   <input id="meter-gap" type="range" min="0" max="20" step="1" value="0" aria-label="진입 간격 통제">
-   <div class="range-ends"><span>끔</span><span>20초 간격</span></div>
-   <p class="hint">정류장 50m 앞(신호·직전 정류장)에서 버스를 도착 순서대로 정한 간격으로만 들여보냅니다. 거기서 기다린 시간은 '상류 대기'로 따로 셉니다.</p></section>
-  <section><h2>ITS 대책</h2>
-   <label class="inline"><input id="its-tsp" type="checkbox"> 버스우선신호 (정류장 120m 앞 교차로, 녹색 10초 연장·적색 10초 단축)</label>
-   <label class="inline">배차간격 유지(BMS) <select id="its-hold"><option value="0">끔</option><option value="0.6">계획 간격의 60% 미만이면 대기</option><option value="0.8">계획 간격의 80% 미만이면 대기</option></select></label>
-   <p class="hint">배차간격 유지는 중앙차로에 들어가기 전(정류장 1.5km 앞) 정류장에서, 같은 노선 앞차와 너무 붙은 버스를 잠시 세웁니다. 버스는 늦어지지만 승객이 기다리는 간격이 고르게 됩니다.</p></section>
-  <section><h2>버스가 오는 시점</h2>
-   <div class="choices" role="radiogroup" aria-label="버스가 오는 시점">
-    <label><input type="radio" name="timing" value="random" checked><span><b>지금처럼 제각각</b>노선마다 따로 출발합니다</span></label>
-    <label><input type="radio" name="timing" value="spread"><span><b>노선끼리 간격 두기</b>노선이 번갈아 도착하도록 출발 시각을 맞춥니다(9/27 회의안)</span></label>
-   </div></section>
-  <section><h2>한 대가 서 있는 시간 <output id="berth-dwell-out">40초</output></h2>
-   <input id="berth-dwell" type="range" min="15" max="60" step="5" value="40" aria-label="한 대가 서 있는 시간"><div class="range-ends"><span>15초 · 한산</span><span>60초 · 붐빔</span></div></section>
-  <details><summary>노선별 자리 배정 보기</summary>
+  <section><h2>① 어디서</h2>
+   <div class="seg" role="radiogroup" aria-label="지역"><label><input type="radio" name="area" value="" checked><span>서울 신용산·삼각지</span></label><label><input type="radio" name="area" value="ilsan"><span>고양 일산 중앙로</span></label></div>
+   <select id="berth-stop" aria-label="정류장"></select><p id="stop-note" class="hint"></p></section>
+  <section><h2>② 정류장 구조</h2>
+   <div class="row"><span class="lbl">추월</span><div class="seg" role="radiogroup" aria-label="추월"><label><input type="radio" name="lane" value="lane" checked><span>추월차로 없음</span></label><label><input type="radio" name="lane" value="free"><span>추월 가능</span></label></div></div>
+   <div class="row"><span class="lbl">정차면</span><div class="seg" role="radiogroup" aria-label="정차면 수"><label><input type="radio" name="berths" value="1"><span>1곳</span></label><label><input type="radio" name="berths" value="2"><span>2곳</span></label><label><input type="radio" name="berths" value="3" checked><span>3곳</span></label><label><input type="radio" name="berths" value="4"><span>4곳</span></label></div></div>
+   <div class="row"><span class="lbl">분리</span><div class="seg" role="radiogroup" aria-label="분리 정류장"><label><input type="radio" name="split" value="" checked><span>하나</span></label><label><input type="radio" name="split" value="pass"><span>2곳·추월 공간</span></label><label><input type="radio" name="split" value="nopass"><span>2곳·공간 없음</span></label></div></div>
+   <p id="struct-hint" class="hint">추월차로가 없으면 앞차가 서 있는 동안 뒤차는 그 앞자리로 못 가고, 승하차를 마쳐도 앞차가 떠나야 나갑니다.</p></section>
+  <section><h2>③ 대책 <button id="measures-reset" class="link" type="button">모두 끄기</button></h2>
+   <div class="row"><span class="lbl">정차 시간</span><div class="rng"><input id="berth-dwell" type="range" min="15" max="60" step="5" value="40" aria-label="한 대가 서 있는 시간"><output id="berth-dwell-out">40초</output></div></div>
+   <div class="row"><span class="lbl">우선신호</span><div class="seg" role="radiogroup" aria-label="버스우선신호"><label><input type="radio" name="tsp" value="0" checked><span>끔</span></label><label><input type="radio" name="tsp" value="1"><span>켬</span></label></div></div>
+   <div class="row"><span class="lbl">배차 유지</span><div class="seg" role="radiogroup" aria-label="배차간격 유지"><label><input type="radio" name="hold" value="0" checked><span>끔</span></label><label><input type="radio" name="hold" value="0.6"><span>60%</span></label><label><input type="radio" name="hold" value="0.8"><span>80%</span></label></div></div>
+   <div class="row"><span class="lbl">진입 간격</span><div class="rng"><input id="meter-gap" type="range" min="0" max="20" step="1" value="0" aria-label="진입 간격 통제"><output id="meter-out">끔</output></div></div>
+   <div class="row"><span class="lbl">출발 시각</span><div class="seg" role="radiogroup" aria-label="버스가 오는 시점"><label><input type="radio" name="timing" value="random" checked><span>제각각</span></label><label><input type="radio" name="timing" value="spread"><span>노선끼리 간격</span></label></div></div>
+   <details class="inner"><summary>대책 설명</summary><ul class="explain">
+    <li><b>정차 시간</b> 한 대가 정류장에 서 있는 평균 시간. 전체 문 승차·차내 태그로 줄일 수 있습니다.</li>
+    <li><b>버스우선신호</b> 정류장 120m 앞 교차로에서 버스가 오면 녹색 10초 연장·적색 10초 단축.</li>
+    <li><b>배차간격 유지</b> 중앙차로에 들어가기 전(1.5km 앞) 정류장에서 같은 노선 앞차와 계획 간격의 60%·80%보다 붙은 버스를 잠시 세웁니다. 버스는 늦어지지만 승객 대기가 고르게 됩니다.</li>
+    <li><b>진입 간격</b> 정류장 50m 앞에서 버스를 정한 간격으로만 들여보냅니다.</li>
+    <li><b>출발 시각</b> 노선이 번갈아 도착하도록 출발을 맞춥니다(9/27 회의안).</li>
+    <li><b>분리 정류장</b> 정차면 수는 분리 정류장마다의 수. 노선은 시간당 버스 수가 반씩 되도록 나눕니다.</li></ul></details></section>
+  <details><summary>노선 배정 보기</summary>
    <p class="hint">정류장을 여러 곳 함께 지나는 두 노선을 선으로 잇고, 이어진 노선끼리 다른 자리를 줍니다. 필요한 자리 수는 가능한 배정을 모두 따져 구한 최소값입니다.</p>
    <ul id="assign-list" class="assign"></ul>
    <svg id="conflict" viewBox="0 0 460 420" role="img" aria-label="함께 달리는 노선 연결 그림"></svg>

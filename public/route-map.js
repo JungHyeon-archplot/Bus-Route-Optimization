@@ -1,9 +1,9 @@
 import {loadSdk} from '/public/map.js';
-import {prepareRoute,positionAt,createSim,step,runFor} from '/src/routesim.js';
+import {prepareRoute,positionAt,createSim,step} from '/src/routesim.js';
 import {renderLog,resetLiveLog,updateLiveLog} from '/public/sim-log.js';
 const $=id=>document.getElementById(id);
 const GREY='#1f3a5f';
-let routeLines=new Map(),liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='single',timing='random',tableTimer,playing=false,rate=30,last=0,liveTimer;
+let routeLines=new Map(),liveInterval=15,maps,map,routesData,preps=new Map(),layers=[],busOverlays=[],liveOverlays=[],sim,params,rule='pooled',timing='random',tableTimer,playing=false,rate=30,last=0,liveTimer;
 
 function clear(list){for(const item of list)item.setMap(null);list.length=0;}
 function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
@@ -20,7 +20,7 @@ const options=key=>({focus:params.focus,assignment:params.assignment,...layout(k
  cascade:true,noise:.45,startJitter:1,signal:true,tsp:params.tsp,holdRatio:params.holdRatio});
 const clock=s=>s<1?'0초':`${Math.floor(s/60)}분 ${Math.round(s%60)}초`;
 
-function rebuildSim(){
+function rebuildSimMapOnly(){
  const {focus,routeIds,assignment,palette}=params;
  const list=routeIds.map(id=>preps.get(id)).filter(Boolean);
  sim=createSim(list,options(rule));
@@ -37,32 +37,63 @@ function rebuildSim(){
  $('sim-skipped').textContent=skipped.length?`${skipped.join(', ')}번은 이 정류장 위치를 경로에 맞추지 못해 움직이기만 하고 줄 계산에서는 빠집니다.`:'';
  resetLiveLog();
  draw();
- clearTimeout(tableTimer);tableTimer=setTimeout(()=>renderTable(list),30);
+}
+function rebuildSim(){
+ rebuildSimMapOnly();
+ // 연달아 바꿀 때 마지막 조건만 계산한다.
+ clearTimeout(tableTimer);tableTimer=setTimeout(()=>renderTable(params.routeIds.map(id=>preps.get(id)).filter(Boolean)),200);
 }
 
 // Same simulation, run headless for 2 hours under each way of stopping, so the table matches what the map shows.
+// 계산은 sim-worker.js에서 돈다. 조건이 또 바뀌면 돌던 계산을 버리고 새로 시작한다.
+let worker,lastRows,lastBase;
+const BASE_LABEL='지금 그대로(추월차로 없음·정차면 3곳·대책 없음)';
 function renderTable(list){
- const {colors,dwell,seed}=params,list0=$('result-bars');
+ const {colors}=params;
  const rows=(params.zones>1
-  ?[['single','설 자리 1곳','모든 버스가 한 자리를 차례로 씁니다'],['pooled',`한 정류장 ${colors*2}면 · 빈 곳 아무 데나`,'같은 정차면을 한 줄로 둔 경우'],['colored',`분리 정류장 2곳 × ${colors}면`,params.passing?'노선 묶음별로 서고, 사이에 추월 공간이 있습니다':'노선 묶음별로 서지만 추월 공간이 없습니다']]
-  :[['single','설 자리 1곳','모든 버스가 한 자리를 차례로 씁니다'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`,'비어 있는 자리에 바로 섭니다'],['colored',`설 자리 ${colors}곳 · 노선별 지정`,'같이 달리는 노선끼리 다른 자리를 받습니다']])
-  .map(([key,label,help])=>({key,label,help,s:runFor(list,options(key))}));
- // 늦어진 시간 = 정류장 앞 줄서기 + 승하차 뒤 앞차 때문에 갇힌 시간 + 진입 통제로 상류에서 기다린 시간.
- const max=Math.max(1,...rows.map(row=>row.s.delay));
+  ?[['single','정차면 1곳'],['pooled',`한 정류장 ${colors*2}면`],['colored',`분리 2곳×${colors}면${params.passing?'':'·공간 없음'}`]]
+  :[['single','정차면 1곳'],['pooled',`${colors}곳 · 빈 곳에 서기`],['colored',`${colors}곳 · 노선별 지정`]]);
+ // 비교 기준: 같은 정류장을 지금 구조 그대로, 대책 없이 돌린 값.
+ const base={...options('pooled'),rule:'pooled',berths:3,zones:1,overtake:false,tsp:false,holdRatio:0,meterGap:0,dwell:40,timing:'random'};
+ const jobs=[...rows.map(([key])=>({key,options:options(key)})),{key:'base',options:base}];
+ worker?.terminate();
+ worker=new Worker('/public/sim-worker.js',{type:'module'});
+ $('calc').hidden=false;$('result-bars').closest('.summary').classList.add('busy');
+ const ids=new Set(list.map(prep=>prep.route.id));
+ worker.onmessage=({data:{results}})=>{
+  worker.terminate();worker=undefined;
+  $('calc').hidden=true;$('result-bars').closest('.summary').classList.remove('busy');
+  const by=Object.fromEntries(results.map(r=>[r.key,r.s]));
+  lastBase=by.base;lastRows=rows.map(([key,label])=>({key,label,s:by[key]}));
+  drawRows();renderLog(lastRows,logContext());
+ };
+ worker.onerror=()=>{$('calc').hidden=true;$('result-detail').textContent='계산 중 오류가 났습니다. 새로 고침해 보세요.';};
+ worker.postMessage({routes:routesData.routes.filter(route=>ids.has(route.id)),jobs});
+}
+
+const pct=(from,to)=>{if(!from)return '';const p=Math.round((to-from)/from*100);return p?`${p<0?'−':'+'}${Math.abs(p)}%`:'변화 없음';};
+function drawRows(){
+ if(!lastRows)return;
+ const list0=$('result-bars'),max=Math.max(1,...lastRows.map(row=>row.s.delay));
  list0.replaceChildren();
  // Each result row is also the switch for that way of stopping: compare and choose in one place.
- for(const {key,label,help,s} of rows){
+ for(const {key,label,s} of lastRows){
   const li=document.createElement('li');if(key===rule)li.className='current';
   const pick=document.createElement('label'),input=document.createElement('input');
   input.type='radio';input.name='rule';input.value=key;input.checked=key===rule;
-  const head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b');
-  name.textContent=label;value.textContent=clock(s.delay);head.append(name,value);
+  const head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b'),pax=document.createElement('i');
+  name.textContent=label;name.title=label;value.textContent=clock(s.delay);pax.textContent=clock(s.passenger.actual);head.append(name,value,pax);
   const track=document.createElement('div'),fill=document.createElement('i');track.className='track';fill.style.width=(s.delay/max*100)+'%';track.append(fill);
-  const meta=document.createElement('small');meta.textContent=`${help} · 줄서기 ${clock(s.totalWait)}${params.overtake?'':` · 갇힘 ${clock(s.exitWait)}`} · 신호 ${clock(s.signalWait)}${s.hold?` · 통제 대기 ${clock(s.hold)}`:''} · 가장 긴 줄 ${s.maxQueue}대 · 승객 대기 ${clock(s.passenger.actual)} (계획대로면 ${clock(s.passenger.planned)})`;
-  pick.append(input,head,track,meta);li.append(pick);list0.append(li);
+  pick.append(input,head,track);li.append(pick);list0.append(li);
  }
- renderLog(rows,logContext());
- $('result-note').textContent=`${params.overtake?'추월 가능':'추월차로 없음'}, ${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, ${params.meterGap?`진입 ${params.meterGap}초 간격, `:''}${params.tsp?'버스우선신호, ':''}${params.holdRatio?`배차간격 유지 ${params.holdRatio*100}%, `:''}한 대 평균 ${dwell}초 정차, seed ${seed}.`;
+ const s=lastRows.find(row=>row.key===rule)?.s;if(!s)return;
+ // 늦어진 시간 = 정류장 앞 줄서기 + 승하차 뒤 앞차 때문에 갇힌 시간 + 신호 대기 + 통제로 기다린 시간.
+ $('result-detail').textContent=`줄서기 ${clock(s.totalWait)}${params.overtake?'':` · 갇힘 ${clock(s.exitWait)}`} · 신호 ${clock(s.signalWait)}${s.hold?` · 통제 대기 ${clock(s.hold)}`:''} · 가장 긴 줄 ${s.maxQueue}대 · 계획 배차대로면 승객 대기 ${clock(s.passenger.planned)}`;
+ const base=$('result-base');base.replaceChildren();
+ if(lastBase){
+  const b=document.createElement('b');b.textContent=`버스 지연 ${pct(lastBase.delay,s.delay)} · 승객 대기 ${pct(lastBase.passenger.actual,s.passenger.actual)}`;
+  base.append('지금 그대로와 비교 ',b);base.title=`${BASE_LABEL}: 버스 지연 ${clock(lastBase.delay)} · 승객 대기 ${clock(lastBase.passenger.actual)}`;
+ }
 }
 
 function logContext(){
@@ -110,11 +141,22 @@ async function refreshLive(){
  if(quota&&left===0){stopLive();$('live-toggle').checked=false;$('live-status').textContent=`오늘 실시간 위치 호출 한도(${quota.dailyLimit}회)에 닿아 멈췄습니다. 시뮬레이션은 계속 쓸 수 있습니다.`;return;}
  $('live-status').textContent=count?`실제 버스 ${count}대 · ${new Date(stamp).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul'})} 기준 · ${liveInterval}초마다 갱신${budget}`:'실시간 위치를 받지 못했습니다. 잠시 뒤 다시 켜 보세요.';
 }
+// 지역이 바뀌면 그 지역 주요 정류장이 다 보이게, 정류장만 바뀌면 그 정류장으로 옮긴다.
+function focusMap(wide){
+ map.relayout();
+ if(wide&&params.areaStops?.length>1){
+  const bounds=new maps.LatLngBounds();
+  for(const [lat,lng] of params.areaStops)bounds.extend(new maps.LatLng(lat,lng));
+  map.setBounds(bounds,60,60,60,60);
+ }else{map.setLevel(4);map.setCenter(new maps.LatLng(params.stop.lat,params.stop.lng));}
+}
 function stopLive(){clearInterval(liveTimer);liveTimer=undefined;}
 function startLive(){stopLive();if(!map)return;refreshLive();liveTimer=setInterval(refreshLive,liveInterval*1000);}
 
 export async function updateRouteMap(next){
+ const areaChanged=params?.base!==next.base;
  params=next;
+ if(map)focusMap(areaChanged);
  try{
   // Route data first: the results and records only need the geometry, not the map.
   if(routesData?.base!==params.base){
@@ -152,7 +194,7 @@ export async function updateRouteMap(next){
   }
   const label=document.createElement('div');label.className='focus-stop';label.innerHTML='<span></span>';label.firstChild.textContent=stop.name;
   layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,xAnchor:.5,yAnchor:1,zIndex:5}));
-  map.relayout();map.setCenter(new maps.LatLng(stop.lat,stop.lng));map.setLevel(4);
+  focusMap(areaChanged);
   rebuildSim();
   if(liveTimer)refreshLive();
  }catch(error){$('route-map-error').textContent=error.message;}
@@ -162,7 +204,7 @@ export async function updateRouteMap(next){
 document.addEventListener('change',event=>{
  if(event.target.name!=='rule'&&event.target.name!=='timing')return;
  rule=document.querySelector('input[name=rule]:checked')?.value??rule;timing=document.querySelector('input[name=timing]:checked').value;
- for(const li of document.querySelectorAll('#result-bars li'))li.classList.toggle('current',li.querySelector('input')?.value===rule);
+ if(event.target.name==='rule'){drawRows();if(sim)rebuildSimMapOnly();return;}
  if(sim)rebuildSim();
  else if(routesData&&params)renderTable(params.routeIds.map(id=>preps.get(id)).filter(Boolean)); // no map: numbers only
 });
@@ -171,7 +213,7 @@ $('sim-play').addEventListener('click',()=>{
  playing=!playing;$('sim-play').classList.toggle('playing',playing);$('sim-play').setAttribute('aria-label',playing?'멈춤':'재생');
  if(playing){last=0;requestAnimationFrame(frame);}
 });
-$('sim-reset').addEventListener('click',()=>{if(sim)rebuildSim();});
+$('sim-reset').addEventListener('click',()=>{if(sim)rebuildSimMapOnly();});
 for(const input of document.querySelectorAll('input[name=rate]'))input.addEventListener('change',()=>{rate=Number(input.value);});
 $('live-toggle').addEventListener('change',event=>{
  stopLive();clear(liveOverlays);$('live-status').textContent='';
