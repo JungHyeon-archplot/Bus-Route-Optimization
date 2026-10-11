@@ -29,7 +29,7 @@ export function positionAt(prep,s){
  return [path[lo][0]+(path[hi][0]-path[lo][0])*f,path[lo][1]+(path[hi][1]-path[lo][1])*f];
 }
 
-// rule: 'single' | 'pooled' | 'colored'
+// rule: 'single' | 'pooled' | 'colored' | 'rear'(추월 불가에서 입구 쪽 빈자리에 바로 서기)
 // overtake: true = 정차면이 서로 독립(뒤차가 앞차를 지나 들어가고 나감). false = 중앙차로처럼 추월차로가 없음:
 //   정차면 0이 맨 앞(출구), 맨 뒤가 입구. 줄의 맨 앞 버스만 들어가고, 지나갈 자리가 모두 비어야 그 자리에 닿으며,
 //   승하차를 마쳐도 앞자리에 버스가 서 있으면 나가지 못한다.
@@ -161,6 +161,8 @@ function reachable(sim,berth){const [,end]=segment(sim,berth);for(let b=berth;b<
 function target(sim,bus){
  if(sim.zones===1&&sim.rule==='colored')return sim.assignment[bus.route]??0;
  const z=sim.zones>1?(sim.zoneOf[bus.route]??0):0,lo=sim.zones>1?z*sim.zb:0,hi=sim.zones>1?lo+sim.zb:sim.occupant.length;
+ // 'rear' = 입구 쪽(맨 뒤) 빈자리에 바로 선다(앞자리로 당겨 서지 않는 습관). 그 밖에는 닿을 수 있는 가장 앞자리.
+ if(sim.rule==='rear'){for(let b=hi-1;b>=lo;b--)if(!sim.occupant[b]&&reachable(sim,b))return b;return -1;}
  for(let b=lo;b<hi;b++)if(reachable(sim,b))return b;
  return -1;
 }
