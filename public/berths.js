@@ -55,7 +55,7 @@ function render(){
  updateRouteMap({stop:graph.stop,focus:arsId,base:dataset.base,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors:berths,dwell,seed,minShared,palette:berthColors,
   overtake:pick('lane')==='free',meterGap:Number($('meter-gap').value),
   tsp:pick('tsp')==='1',holdRatio:Number(pick('hold')),zones:zones?2:1,passing:split==='pass',
-  areaStops:dataset.focusStops,calib:calibFor(pick('area'))});
+  areaStops:dataset.focusStops,calib:calibFor(pick('area')),habit:pick('habit')});
  $('meter-out').textContent=Number($('meter-gap').value)?$('meter-gap').value+'초 간격':'끔';
 }
 

@@ -10,10 +10,12 @@ function dot(className,color,title){const el=document.createElement('span');el.c
 
 // 화면과 표가 같은 조건으로 돌도록 한곳에서 만든다. 진입 통제 지점은 정류장 50m 앞.
 // 분리 정류장을 고르면 세 번째 줄(colored)이 분리 정류장, 두 번째 줄(pooled)은 같은 정차면을 한 정류장에 일렬로 둔 경우다.
+// 정차 습관이 '입구 쪽에 바로 서기'면 빈 곳에 서는 줄(pooled)과 분리 정류장 줄을 그 습관(rear)으로 돌린다.
+const free=()=>params.habit==='rear'?'rear':'pooled';
 const layout=key=>params.zones>1
- ?key==='colored'?{rule:'pooled',zones:2,berths:params.colors,zoneOf:params.assignment,passing:params.passing}
-  :{rule:key,berths:params.colors*2}
- :{rule:key,berths:params.colors};
+ ?key==='colored'?{rule:free(),zones:2,berths:params.colors,zoneOf:params.assignment,passing:params.passing}
+  :{rule:key==='pooled'?free():key,berths:params.colors*2}
+ :{rule:key==='pooled'?free():key,berths:params.colors};
 const options=key=>({focus:params.focus,assignment:params.assignment,...layout(key),dwell:params.dwell,seed:params.seed,timing,
  overtake:params.overtake,meterGap:params.meterGap,meterAt:50,
  // 연쇄 지연과 흔들림은 실측 몰림 정도에 맞춘 값(scripts/lane-experiment.mjs와 같음).
@@ -51,8 +53,8 @@ const BASE_LABEL='지금 그대로(추월차로 없음·정차면 3곳·대책 �
 function renderTable(list){
  const {colors}=params;
  const rows=(params.zones>1
-  ?[['single','정차면 1곳'],['pooled',`한 정류장 ${colors*2}면`],['colored',`분리 2곳×${colors}면${params.passing?'':'·공간 없음'}`]]
-  :[['single','정차면 1곳'],['pooled',`${colors}곳 · 빈 곳에 서기`],['colored',`${colors}곳 · 노선별 지정`]]);
+  ?[['single','정차면 1곳'],['pooled',`한 정류장 ${colors*2}면${params.habit==='rear'?'·입구에 서기':''}`],['colored',`분리 2곳×${colors}면${params.passing?'':'·공간 없음'}`]]
+  :[['single','정차면 1곳'],['pooled',`${colors}곳 · ${params.habit==='rear'?'입구 쪽에 서기':'앞자리부터 서기'}`],['colored',`${colors}곳 · 노선별 지정`]]);
  // 비교 기준: 같은 정류장을 지금 구조 그대로, 대책 없이 돌린 값.
  const base={...options('pooled'),rule:'pooled',berths:3,zones:1,overtake:false,tsp:false,holdRatio:0,meterGap:0,dwell:40,timing:'random'};
  const jobs=[...rows.map(([key])=>({key,options:options(key)})),{key:'base',options:base}];
