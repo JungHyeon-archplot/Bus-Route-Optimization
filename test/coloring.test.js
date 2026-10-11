@@ -19,3 +19,8 @@ test('conflict graph uses shared corridor stops and drops night/tour routes',()=
  assert.deepEqual(g.nodes.map(n=>n.id),['x','y','z']);
  assert.deepEqual(g.edges,[{a:'x',b:'y',shared:3}]);
 });
+test('분리 정류장 배정: 시간당 버스 수를 고르게 나눈다',async()=>{
+ const {splitRoutes}=await import('../src/coloring.js');
+ const {zoneOf,load}=splitRoutes(['a','b','c','d','e'].map(id=>({id})),{a:12,b:6,c:6,d:4,e:2},2);
+ assert.ok(Math.abs(load[0]-load[1])<=2);assert.equal(Object.keys(zoneOf).length,5);
+});

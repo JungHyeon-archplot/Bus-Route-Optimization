@@ -106,7 +106,7 @@ $('record-add').addEventListener('click',async()=>{
  const ctx=lastCtx,{s}=lastRuns.find(run=>run.key===ctx.rule),pairs=summarizeLog(s.log).pairs;
  const total=pairs.reduce((sum,pair)=>sum+pair.totalWait,0),linked=pairs.filter(pair=>ctx.linked(pair.blocker,pair.blocked)).reduce((sum,pair)=>sum+pair.totalWait,0);
  let record={savedAt:new Date().toISOString(),arsId:ctx.arsId,stopName:ctx.stopName,rule:ctx.rule,timing:ctx.timing,dwell:ctx.dwell,seed:ctx.seed,minShared:ctx.minShared,
-  berths:ctx.rule==='single'?1:ctx.colors,hours:2,served:s.served,waited:s.waited,totalWait:Math.round(s.totalWait),maxQueue:s.maxQueue,linkedShare:total?Math.round(linked/total*100):null,by:$('record-by').value.trim().slice(0,20)};
+  berths:ctx.rule==='single'?1:ctx.colors,hours:2,served:s.served,waited:s.waited,totalWait:Math.round(s.delay??s.totalWait),maxQueue:s.maxQueue,linkedShare:total?Math.round(linked/total*100):null,by:$('record-by').value.trim().slice(0,20)};
  try{
   if(shared){record=(await api('POST','/records',record)).record;store(NAME_KEY,record.by);}
   // Team records pile up and are never overwritten; the browser-only fallback still replaces the same conditions.

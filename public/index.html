@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>충무로 정류장 시뮬레이터</title>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>중앙차로 정류장 시뮬레이터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/public/style.css"></head>
 <body>
-<header class="bar"><h1>충무로 정류장 시뮬레이터</h1><p>한 정류장에 버스가 한꺼번에 몰리면 얼마나 기다릴까요? 조건을 바꿔 실제 노선 위에서 확인합니다.</p></header>
+<header class="bar"><h1>중앙차로 정류장 시뮬레이터</h1><p>추월차로가 없는 중앙버스정류장에 버스가 한꺼번에 몰리면 얼마나 기다릴까요? 서울 신용산·삼각지와 일산 중앙로의 실제 노선 위에서 비교합니다.</p></header>
 <main class="sim-layout">
 <div class="map-wrap">
  <div id="route-map" aria-label="실제 노선 위 버스 시뮬레이션 지도"></div>
@@ -27,8 +27,8 @@
 
 <aside class="panel" aria-label="시뮬레이션 조건과 결과">
  <section class="summary" aria-labelledby="summary-title">
-  <div class="summary-head"><h2 id="summary-title">2시간 돌렸을 때 버스가 기다린 시간</h2><button id="record-add" class="record-btn" title="지금 조건과 결과를 팀 기록에 남깁니다">기록하기</button></div>
-  <p class="hint summary-hint">방식을 누르면 지도도 그 방식으로 바뀝니다.</p>
+  <div class="summary-head"><h2 id="summary-title">2시간 돌렸을 때 버스가 늦어진 시간</h2><button id="record-add" class="record-btn" title="지금 조건과 결과를 팀 기록에 남깁니다">기록하기</button></div>
+  <p class="hint summary-hint">방식을 누르면 지도도 그 방식으로 바뀝니다. 승객 대기는 이 정류장에서 승객 한 명이 버스를 기다리는 평균 시간입니다.</p>
   <ul id="result-bars" class="bars" role="radiogroup" aria-label="버스가 서는 방식"><li class="hint">계산 중…</li></ul>
   <p id="result-note" class="hint"></p>
   <p id="record-status" class="record-status" role="status"></p>
@@ -41,7 +41,24 @@
  </nav>
 
  <div id="pane-cond" role="tabpanel" aria-labelledby="ptab-cond">
+  <section><h2>지역</h2><select id="area" aria-label="지역"><option value="">서울 신용산·삼각지 (한강대로 중앙차로)</option><option value="ilsan">고양 일산 중앙로 BRT</option></select></section>
   <section><h2>정류장</h2><select id="berth-stop" aria-label="정류장"></select><p id="stop-note" class="hint"></p></section>
+  <section><h2>정류장 구조</h2>
+   <div class="choices" role="radiogroup" aria-label="정류장 구조">
+    <label><input type="radio" name="lane" value="lane" checked><span><b>추월차로 없음 (중앙차로)</b>앞차가 서 있으면 뒤차는 그 자리까지 못 가고, 승하차를 마쳐도 앞차가 떠나야 나갑니다</span></label>
+    <label><input type="radio" name="lane" value="free"><span><b>추월 가능 (비교용)</b>각 자리에 따로 들어가고 나갑니다</span></label>
+   </div>
+   <label class="inline">정차면 수 <input id="berth-count" type="range" min="1" max="4" value="3"><output id="berth-count-out">3곳</output></label>
+   <label class="inline">분리 정류장 <select id="split"><option value="">하나의 정류장</option><option value="pass">2곳으로 분리 · 사이에 추월 공간 있음</option><option value="nopass">2곳으로 분리 · 추월 공간 없음</option></select></label>
+   <p class="hint">분리하면 정차면 수는 분리 정류장마다의 수입니다. 노선은 시간당 버스 수가 반씩 되도록 배정합니다. 결과의 세 번째 줄이 분리 정류장, 두 번째 줄은 같은 정차면을 한 정류장에 일렬로 둔 경우입니다.</p></section>
+  <section><h2>진입 간격 통제 <output id="meter-out">끔</output></h2>
+   <input id="meter-gap" type="range" min="0" max="20" step="1" value="0" aria-label="진입 간격 통제">
+   <div class="range-ends"><span>끔</span><span>20초 간격</span></div>
+   <p class="hint">정류장 50m 앞(신호·직전 정류장)에서 버스를 도착 순서대로 정한 간격으로만 들여보냅니다. 거기서 기다린 시간은 '상류 대기'로 따로 셉니다.</p></section>
+  <section><h2>ITS 대책</h2>
+   <label class="inline"><input id="its-tsp" type="checkbox"> 버스우선신호 (정류장 120m 앞 교차로, 녹색 10초 연장·적색 10초 단축)</label>
+   <label class="inline">배차간격 유지(BMS) <select id="its-hold"><option value="0">끔</option><option value="0.6">계획 간격의 60% 미만이면 대기</option><option value="0.8">계획 간격의 80% 미만이면 대기</option></select></label>
+   <p class="hint">배차간격 유지는 중앙차로에 들어가기 전(정류장 1.5km 앞) 정류장에서, 같은 노선 앞차와 너무 붙은 버스를 잠시 세웁니다. 버스는 늦어지지만 승객이 기다리는 간격이 고르게 됩니다.</p></section>
   <section><h2>버스가 오는 시점</h2>
    <div class="choices" role="radiogroup" aria-label="버스가 오는 시점">
     <label><input type="radio" name="timing" value="random" checked><span><b>지금처럼 제각각</b>노선마다 따로 출발합니다</span></label>
@@ -61,7 +78,7 @@
    <label class="inline"><input id="live-toggle" type="checkbox"> 켜기</label>
    <label class="inline">갱신 <select id="live-interval"><option value="10">10초</option><option value="15" selected>15초</option><option value="30">30초</option><option value="60">60초</option></select></label>
    <p id="live-status" class="hint">서울시 버스는 약 20초마다 위치를 보냅니다. 하루 호출 한도(1,000회)가 있어 간격이 짧을수록 볼 수 있는 시간이 줄어듭니다.</p></details>
-  <footer class="hint"><span id="sim-source"></span> 버스 속도는 보통 정류장 정차까지 포함한 평균 시속 15km로, 차량 수는 노선 길이와 계획 배차간격으로 정했습니다. 줄은 고른 정류장에서만 계산합니다. 관광·심야 노선은 뺐습니다. <span id="sim-skipped"></span></footer>
+  <footer class="hint"><span id="sim-source"></span> 모든 정류장에서 승하차하며, 앞차와 간격이 벌어질수록 손님이 쌓여 정차가 길어집니다(연쇄 지연). 구간 속도 ±45%와 차고지 출발 불규칙은 승객 대기가 계획의 약 1.5배가 되도록 맞췄습니다(9/30 서울 실측 2.20분 ÷ 1.42분). 교차로 신호는 주기 150초·녹색 60초로 가정했습니다. 버스 속도는 보통 정류장 정차까지 포함한 평균 시속 15km로, 차량 수는 노선 길이와 계획 배차간격으로 정했습니다. 줄은 고른 정류장에서만 계산합니다. 관광·심야 노선은 뺐습니다. <span id="sim-skipped"></span></footer>
  </div>
 
  <div id="pane-why" role="tabpanel" aria-labelledby="ptab-why" hidden>
@@ -72,10 +89,6 @@
    <details class="inner"><summary>노선별로 보기</summary><div class="table-wrap"><table><thead><tr><th>노선</th><th>도착</th><th>기다림</th><th>기다린 시간</th></tr></thead><tbody id="log-routes"></tbody></table></div></details>
    <button id="log-download" class="download">세 방식 2시간 버스별 기록 CSV</button></section>
   <section><h2>지도에서 방금 생긴 기다림</h2><ol id="log-live" class="live-log" aria-live="off"></ol></section>
-  <section><h2>실제로 관측한 도착</h2>
-   <p id="obs-summary" class="hint">관측 자료를 불러오는 중입니다.</p>
-   <svg id="obs-strip" viewBox="0 0 720 110" role="img" aria-label="관측한 버스 통과 시각"></svg>
-   <p id="obs-note" class="hint"></p></section>
  </div>
 
  <div id="pane-rec" role="tabpanel" aria-labelledby="ptab-rec" hidden>
@@ -90,5 +103,5 @@
  </div>
 </aside>
 </main>
-<script type="module" src="/public/berths.js"></script><script type="module" src="/public/ui.js"></script><script type="module" src="/public/observation.js"></script>
+<script type="module" src="/public/berths.js"></script><script type="module" src="/public/ui.js"></script>
 </body></html>

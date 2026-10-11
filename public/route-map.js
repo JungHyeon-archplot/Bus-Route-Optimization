@@ -8,10 +8,22 @@ let routeLines=new Map(),liveInterval=15,maps,map,routesData,preps=new Map(),lay
 function clear(list){for(const item of list)item.setMap(null);list.length=0;}
 function dot(className,color,title){const el=document.createElement('span');el.className=className;el.style.background=color;el.title=title;return el;}
 
+// 화면과 표가 같은 조건으로 돌도록 한곳에서 만든다. 진입 통제 지점은 정류장 50m 앞.
+// 분리 정류장을 고르면 세 번째 줄(colored)이 분리 정류장, 두 번째 줄(pooled)은 같은 정차면을 한 정류장에 일렬로 둔 경우다.
+const layout=key=>params.zones>1
+ ?key==='colored'?{rule:'pooled',zones:2,berths:params.colors,zoneOf:params.assignment,passing:params.passing}
+  :{rule:key,berths:params.colors*2}
+ :{rule:key,berths:params.colors};
+const options=key=>({focus:params.focus,assignment:params.assignment,...layout(key),dwell:params.dwell,seed:params.seed,timing,
+ overtake:params.overtake,meterGap:params.meterGap,meterAt:50,
+ // 연쇄 지연과 흔들림은 실측 몰림 정도에 맞춘 값(scripts/lane-experiment.mjs와 같음).
+ cascade:true,noise:.45,startJitter:1,signal:true,tsp:params.tsp,holdRatio:params.holdRatio});
+const clock=s=>s<1?'0초':`${Math.floor(s/60)}분 ${Math.round(s%60)}초`;
+
 function rebuildSim(){
- const {focus,routeIds,assignment,colors,dwell,palette,seed}=params;
+ const {focus,routeIds,assignment,palette}=params;
  const list=routeIds.map(id=>preps.get(id)).filter(Boolean);
- sim=createSim(list,{focus,rule,assignment,berths:colors,dwell,seed,timing});
+ sim=createSim(list,options(rule));
  clear(busOverlays);
  for(const [id,line] of routeLines)line.setOptions(rule==='colored'?{strokeColor:palette[assignment[id]],strokeOpacity:.55,strokeWeight:4}:{strokeColor:'#5b6770',strokeOpacity:.35,strokeWeight:4});
  for(const bus of sim.buses){
@@ -30,10 +42,13 @@ function rebuildSim(){
 
 // Same simulation, run headless for 2 hours under each way of stopping, so the table matches what the map shows.
 function renderTable(list){
- const {focus,assignment,colors,dwell,seed}=params,list0=$('result-bars');
- const rows=[['single','설 자리 1곳','모든 버스가 한 자리를 차례로 씁니다'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`,'비어 있는 자리에 바로 섭니다'],['colored',`설 자리 ${colors}곳 · 노선별 지정`,'같이 달리는 노선끼리 다른 자리를 받습니다']]
-  .map(([key,label,help])=>({key,label,help,s:runFor(list,{focus,rule:key,assignment,berths:colors,dwell,seed,timing})}));
- const max=Math.max(1,...rows.map(row=>row.s.totalWait));
+ const {colors,dwell,seed}=params,list0=$('result-bars');
+ const rows=(params.zones>1
+  ?[['single','설 자리 1곳','모든 버스가 한 자리를 차례로 씁니다'],['pooled',`한 정류장 ${colors*2}면 · 빈 곳 아무 데나`,'같은 정차면을 한 줄로 둔 경우'],['colored',`분리 정류장 2곳 × ${colors}면`,params.passing?'노선 묶음별로 서고, 사이에 추월 공간이 있습니다':'노선 묶음별로 서지만 추월 공간이 없습니다']]
+  :[['single','설 자리 1곳','모든 버스가 한 자리를 차례로 씁니다'],['pooled',`설 자리 ${colors}곳 · 빈 곳 아무 데나`,'비어 있는 자리에 바로 섭니다'],['colored',`설 자리 ${colors}곳 · 노선별 지정`,'같이 달리는 노선끼리 다른 자리를 받습니다']])
+  .map(([key,label,help])=>({key,label,help,s:runFor(list,options(key))}));
+ // 늦어진 시간 = 정류장 앞 줄서기 + 승하차 뒤 앞차 때문에 갇힌 시간 + 진입 통제로 상류에서 기다린 시간.
+ const max=Math.max(1,...rows.map(row=>row.s.delay));
  list0.replaceChildren();
  // Each result row is also the switch for that way of stopping: compare and choose in one place.
  for(const {key,label,help,s} of rows){
@@ -41,13 +56,13 @@ function renderTable(list){
   const pick=document.createElement('label'),input=document.createElement('input');
   input.type='radio';input.name='rule';input.value=key;input.checked=key===rule;
   const head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b');
-  name.textContent=label;value.textContent=s.totalWait<1?'0초':`${Math.floor(s.totalWait/60)}분 ${Math.round(s.totalWait%60)}초`;head.append(name,value);
-  const track=document.createElement('div'),fill=document.createElement('i');track.className='track';fill.style.width=(s.totalWait/max*100)+'%';track.append(fill);
-  const meta=document.createElement('small');meta.textContent=`${help} · ${s.served}대 중 ${s.waited}대 기다림 · 가장 긴 줄 ${s.maxQueue}대`;
+  name.textContent=label;value.textContent=clock(s.delay);head.append(name,value);
+  const track=document.createElement('div'),fill=document.createElement('i');track.className='track';fill.style.width=(s.delay/max*100)+'%';track.append(fill);
+  const meta=document.createElement('small');meta.textContent=`${help} · 줄서기 ${clock(s.totalWait)}${params.overtake?'':` · 갇힘 ${clock(s.exitWait)}`} · 신호 ${clock(s.signalWait)}${s.hold?` · 통제 대기 ${clock(s.hold)}`:''} · 가장 긴 줄 ${s.maxQueue}대 · 승객 대기 ${clock(s.passenger.actual)} (계획대로면 ${clock(s.passenger.planned)})`;
   pick.append(input,head,track,meta);li.append(pick);list0.append(li);
  }
  renderLog(rows,logContext());
- $('result-note').textContent=`${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, 한 대 ${dwell}초 정차, seed ${seed}.`;
+ $('result-note').textContent=`${params.overtake?'추월 가능':'추월차로 없음'}, ${timing==='spread'?'노선끼리 간격 두기':'지금처럼 제각각'}, ${params.meterGap?`진입 ${params.meterGap}초 간격, `:''}${params.tsp?'버스우선신호, ':''}${params.holdRatio?`배차간격 유지 ${params.holdRatio*100}%, `:''}한 대 평균 ${dwell}초 정차, seed ${seed}.`;
 }
 
 function logContext(){
@@ -58,7 +73,7 @@ function logContext(){
 function draw(){
  for(const bus of sim.buses){
   bus.overlay.setPosition(new maps.LatLng(...positionAt(bus.prep,bus.u)));
-  bus.el.classList.toggle('queued',bus.state==='queue');
+  bus.el.classList.toggle('queued',bus.state==='queue'||bus.state==='hold'||bus.state==='blocked');
  }
  const {served,waited,totalWait}=sim.stats;
  $('sim-clock').textContent=`${Math.floor(sim.time/60)}분`;
@@ -102,13 +117,17 @@ export async function updateRouteMap(next){
  params=next;
  try{
   // Route data first: the results and records only need the geometry, not the map.
-  if(!routesData){
-   const response=await fetch('/routes.json');
+  if(routesData?.base!==params.base){
+   const response=await fetch(params.base+'routes.json');
    if(!response.ok)throw new Error('노선 경로 자료가 없습니다. npm run collect:routes 로 먼저 수집하세요.');
-   routesData=await response.json();
+   routesData=await response.json();routesData.base=params.base;
    for(const route of routesData.routes)preps.set(route.id,prepareRoute(route));
+   // 실시간 위치는 서울시 API라 서울 노선만 볼 수 있다.
+   const seoulOnly=params.base!=='/';$('live-toggle').disabled=seoulOnly;
+   if(seoulOnly&&liveTimer){stopLive();clear(liveOverlays);$('live-toggle').checked=false;}
+   $('live-status').textContent=seoulOnly?'실시간 위치 겹쳐 보기는 서울 지역에서만 됩니다.':'';
   }
-  $('sim-source').textContent=`노선 경로·정류장 순서: 서울시 노선정보조회, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
+  $('sim-source').textContent=`노선 경로·정류장 순서: ${params.base==='/'?'서울시 노선정보조회':'경기도 버스노선 조회'}, ${new Date(routesData.fetchedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} 수집.`;
   if(!map){
    try{
     const config=await fetch('/config.json').then(r=>r.json());

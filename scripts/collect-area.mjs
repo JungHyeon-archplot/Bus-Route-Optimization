@@ -1,10 +1,10 @@
 // Collects every stop within a radius and the routes passing each stop, then writes the public snapshot.
-// Usage: npm run collect:area -- [경도] [위도] [반경m]   (기본: 충무로역~동국대 사이 중심, 800m)
+// Usage: npm run collect:area -- [경도] [위도] [반경m]   (기본: 신용산역~삼각지역 사이 중심, 700m)
 import {mkdir,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {request} from './collect.mjs';
 import {normalizeStations,normalizeRoutesAtStop} from '../src/data/normalize.js';
-const [lng='127.0000',lat='37.5595',radius='800']=process.argv.slice(2);
+const [lng='126.9702',lat='37.5322',radius='700']=process.argv.slice(2);
 try{
  if(!(Number(radius)>0&&Number(radius)<=1500))throw new Error('반경은 1~1500m로 지정하세요.');
  const fetchedAt=new Date().toISOString();
