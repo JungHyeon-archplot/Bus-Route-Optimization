@@ -3,7 +3,7 @@
  --ink:#1d2328;--muted:#5d6872;--line:#dde3df;--danger:#d64532;
  --r:10px;--r-sm:6px;--panel:392px;
  --shadow:0 6px 24px rgba(20,24,28,.22),0 1px 3px rgba(20,24,28,.2);
- font-family:"IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif;color:var(--ink);background:var(--curb);font-synthesis:none;line-height:1.55;
+ font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",system-ui,sans-serif;color:var(--ink);background:var(--curb);font-synthesis:none;line-height:1.55;
 }
 *{box-sizing:border-box}
 html,body{height:100%}

@@ -5,7 +5,7 @@ import {prepareRoute,runFor} from '../src/routesim.js';
 import {conflictGraph,colorGraph,splitRoutes} from '../src/coloring.js';
 const read=async f=>JSON.parse(await readFile(new URL('../'+f,import.meta.url),'utf8'));
 const out=process.argv[2]??'presentation-data.json';
-const SEEDS=[1,2,3,4,5,6,7,8,9,10];
+const SEEDS=Array.from({length:30},(_,i)=>i+1); // 발표·논문 모두 seed 1~30
 const stat=list=>({mean:list.reduce((a,b)=>a+b,0)/list.length,min:Math.min(...list),max:Math.max(...list)});
 
 async function site(dir,arsId){
