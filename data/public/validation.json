@@ -1,0 +1,312 @@
+{
+  "generatedAt": "2026-10-01T00:59:07.057Z",
+  "stops": {
+    "02151": {
+      "name": "충무로역.한옥마을.한국의집",
+      "routes": 10,
+      "berths": 5,
+      "conservation": true,
+      "seeds": {
+        "n": 20,
+        "single": {
+          "mean": 2097,
+          "sd": 407,
+          "min": 1475,
+          "max": 3184
+        },
+        "pooled": {
+          "mean": 0,
+          "sd": 0,
+          "min": 0,
+          "max": 0
+        },
+        "colored": {
+          "mean": 147,
+          "sd": 50,
+          "min": 29,
+          "max": 230
+        },
+        "orderHeld": 20
+      },
+      "duration": {
+        "single": {
+          "per_hour_2h": 1025,
+          "per_hour_6h": 1256
+        },
+        "pooled": {
+          "per_hour_2h": 0,
+          "per_hour_6h": 0
+        },
+        "colored": {
+          "per_hour_2h": 72,
+          "per_hour_6h": 73
+        }
+      },
+      "dwell": [
+        {
+          "dwell": 20,
+          "single": 339,
+          "pooled": 0,
+          "colored": 35
+        },
+        {
+          "dwell": 30,
+          "single": 857,
+          "pooled": 0,
+          "colored": 83
+        },
+        {
+          "dwell": 40,
+          "single": 2050,
+          "pooled": 0,
+          "colored": 143
+        },
+        {
+          "dwell": 50,
+          "single": 4408,
+          "pooled": 0,
+          "colored": 217
+        },
+        {
+          "dwell": 60,
+          "single": 8094,
+          "pooled": 0,
+          "colored": 302
+        }
+      ],
+      "speed": [
+        {
+          "kmh": 12,
+          "single": 2954,
+          "pooled": 0,
+          "colored": 192
+        },
+        {
+          "kmh": 15,
+          "single": 2050,
+          "pooled": 0,
+          "colored": 143
+        },
+        {
+          "kmh": 18,
+          "single": 1767,
+          "pooled": 0,
+          "colored": 178
+        }
+      ],
+      "threshold": [
+        {
+          "minShared": 2,
+          "berths": 8,
+          "colored": 29
+        },
+        {
+          "minShared": 3,
+          "berths": 5,
+          "colored": 143
+        },
+        {
+          "minShared": 4,
+          "berths": 4,
+          "colored": 272
+        },
+        {
+          "minShared": 5,
+          "berths": 4,
+          "colored": 393
+        }
+      ],
+      "linkedShare": {
+        "wait": 57,
+        "pairsLinked": 51
+      }
+    },
+    "02163": {
+      "name": "을지로4가.베스트웨스턴국도",
+      "routes": 8,
+      "berths": 5,
+      "conservation": true,
+      "seeds": {
+        "n": 20,
+        "single": {
+          "mean": 1102,
+          "sd": 180,
+          "min": 728,
+          "max": 1478
+        },
+        "pooled": {
+          "mean": 0,
+          "sd": 0,
+          "min": 0,
+          "max": 0
+        },
+        "colored": {
+          "mean": 79,
+          "sd": 18,
+          "min": 40,
+          "max": 100
+        },
+        "orderHeld": 20
+      },
+      "duration": {
+        "single": {
+          "per_hour_2h": 561,
+          "per_hour_6h": 523
+        },
+        "pooled": {
+          "per_hour_2h": 0,
+          "per_hour_6h": 0
+        },
+        "colored": {
+          "per_hour_2h": 50,
+          "per_hour_6h": 33
+        }
+      },
+      "dwell": [
+        {
+          "dwell": 20,
+          "single": 305,
+          "pooled": 0,
+          "colored": 30
+        },
+        {
+          "dwell": 30,
+          "single": 653,
+          "pooled": 0,
+          "colored": 58
+        },
+        {
+          "dwell": 40,
+          "single": 1122,
+          "pooled": 0,
+          "colored": 100
+        },
+        {
+          "dwell": 50,
+          "single": 1723,
+          "pooled": 0,
+          "colored": 150
+        },
+        {
+          "dwell": 60,
+          "single": 2557,
+          "pooled": 0,
+          "colored": 210
+        }
+      ],
+      "speed": [
+        {
+          "kmh": 12,
+          "single": 913,
+          "pooled": 0,
+          "colored": 32
+        },
+        {
+          "kmh": 15,
+          "single": 1122,
+          "pooled": 0,
+          "colored": 100
+        },
+        {
+          "kmh": 18,
+          "single": 1081,
+          "pooled": 0,
+          "colored": 187
+        }
+      ],
+      "threshold": [
+        {
+          "minShared": 2,
+          "berths": 5,
+          "colored": 70
+        },
+        {
+          "minShared": 3,
+          "berths": 5,
+          "colored": 100
+        },
+        {
+          "minShared": 4,
+          "berths": 5,
+          "colored": 4
+        },
+        {
+          "minShared": 5,
+          "berths": 4,
+          "colored": 150
+        }
+      ],
+      "linkedShare": {
+        "wait": 51,
+        "pairsLinked": 54
+      }
+    }
+  },
+  "vehicles": [
+    {
+      "route": "421",
+      "km": 58.6,
+      "headway": 9,
+      "simulated": 26,
+      "actual": 27,
+      "impliedKmh": 14.5
+    },
+    {
+      "route": "463",
+      "km": 51.2,
+      "headway": 10,
+      "simulated": 20,
+      "actual": 26,
+      "impliedKmh": 11.8
+    },
+    {
+      "route": "507",
+      "km": 47.8,
+      "headway": 9,
+      "simulated": 21,
+      "actual": 21,
+      "impliedKmh": 15.2
+    }
+  ],
+  "arrivals": {
+    "simulated": {
+      "passes": 38,
+      "within60": 19,
+      "gapCv": 0.66,
+      "perRoute": {
+        "421": {
+          "min": 9,
+          "max": 9
+        },
+        "463": {
+          "min": 10.2,
+          "max": 10.3
+        },
+        "507": {
+          "min": 9.1,
+          "max": 9.1
+        }
+      }
+    },
+    "observed": {
+      "passes": 15,
+      "within60": 29,
+      "randomExpected": 31,
+      "gapCv": 0.75,
+      "perRoute": {
+        "421": {
+          "min": 4.8,
+          "max": 7.5
+        },
+        "463": {
+          "min": 4.9,
+          "max": 14.2
+        },
+        "507": {
+          "min": 7,
+          "max": 11.3
+        }
+      }
+    }
+  }
+}
