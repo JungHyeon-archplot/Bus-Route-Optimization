@@ -61,7 +61,10 @@ function render(){
 
 function calibFor(area){
  const c=calibration[area||'seoul'];
- const note=c?`${c.observation.match(/(\d{8})/)?.[1]?.replace(/(\d{4})(\d{2})(\d{2})/,'$1.$2.$3')??''} ${c.stop} 출근 시간 실측 ${c.minutes}분에 맞춤(승객 대기÷계획 실측 ${c.observed.ratio.toFixed(2)}, 시뮬레이션 ${c.simulated.ratio.toFixed(2)})`:DEFAULT_CALIB.note;
+ // 실측 시각(한국 시간)과 시간대를 그대로 밝힌다: 7~9시 시작이면 출근 시간, 그 밖은 평일 낮.
+ const kst=c?.startedAt?new Date(Date.parse(c.startedAt)+9*3600e3):null;
+ const when=kst?`${kst.getUTCMonth()+1}/${kst.getUTCDate()} ${kst.getUTCHours()}:${String(kst.getUTCMinutes()).padStart(2,'0')}부터 ${c.minutes}분(${kst.getUTCHours()>=7&&kst.getUTCHours()<9?'출근 시간':'평일 낮'})`:`${c?.minutes}분`;
+ const note=c?`${c.stop} 실측 ${when}에 맞춤(승객 대기÷계획 실측 ${c.observed.ratio.toFixed(2)}, 시뮬레이션 ${c.simulated.ratio.toFixed(2)})`:DEFAULT_CALIB.note;
  $('calib-note').textContent=`흔들림 보정: ${note}.`;
  return c?{noise:c.noise,startJitter:c.startJitter}:DEFAULT_CALIB;
 }

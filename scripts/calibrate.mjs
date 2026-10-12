@@ -34,7 +34,7 @@ async function setup(file){
   const r=runFor(preps,{focus:obs.stop.arsId,rule:'pooled',berths:3,dwell:40,overtake:false,cascade:true,signal:true,seed,...params},WARMUP+duration);
   return metrics(Object.fromEntries(Object.entries(r.departures).filter(([id])=>ids.has(id))),headways,{from:WARMUP});
  }));
- return {file,area,stop:obs.stop,routes:obs.routes.length,minutes:Math.round(duration/60),observed,simulate};
+ return {file,area,stop:obs.stop,routes:obs.routes.length,minutes:Math.round(duration/60),startedAt:obs.startedAt,observed,simulate};
 }
 
 try{
@@ -55,7 +55,7 @@ try{
   return {from:source.area,to:target.area,params:{noise:source.best.noise,startJitter:source.best.startJitter},observed:target.observed,simulated:sim};
  })):[];
  const result={generatedAt:new Date().toISOString(),method:'격자 탐색 noise×startJitter, seed 5개 평균, 맞춤 지표: 승객 대기÷계획 + 1분 안 연달아 비율, 검증: 간격 변동계수·교차 예측',
-  areas:Object.fromEntries(sites.map(s=>[s.area,{arsId:s.stop.arsId,stop:s.stop.name,observation:s.file.replace(/^.*[\\/]/,''),routes:s.routes,minutes:s.minutes,
+  areas:Object.fromEntries(sites.map(s=>[s.area,{arsId:s.stop.arsId,stop:s.stop.name,observation:s.file.replace(/^.*[\\/]/,''),startedAt:s.startedAt,routes:s.routes,minutes:s.minutes,
    noise:s.best.noise,startJitter:s.best.startJitter,observed:s.observed,simulated:s.best.sim,before:{...BEFORE,simulated:s.before}}])),cross};
  await writeFile(out,JSON.stringify(result,null,2)+'\n');
  const f=(x,d=2)=>x==null?'-':x.toFixed(d),pc=x=>x==null?'-':(x*100).toFixed(0)+'%';
