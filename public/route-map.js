@@ -16,7 +16,7 @@ const layout=key=>params.zones>1
  ?key==='colored'?{rule:free(),zones:2,berths:params.colors,zoneOf:params.assignment,passing:params.passing}
   :{rule:key==='pooled'?free():key,berths:params.colors*2}
  :{rule:key==='pooled'?free():key,berths:params.colors};
-const options=key=>({focus:params.focus,assignment:params.assignment,...layout(key),dwell:params.dwell,seed:params.seed,timing,
+const options=key=>({focus:params.focus,assignment:params.assignment,...layout(key),dwell:params.dwell,...(params.stopDwell&&{stopDwell:params.stopDwell}),seed:params.seed,timing,
  overtake:params.overtake,meterGap:params.meterGap,meterAt:50,
  // 연쇄 지연과 흔들림은 실측 몰림 정도에 맞춘 값(scripts/lane-experiment.mjs와 같음).
  cascade:true,noise:params.calib.noise,startJitter:params.calib.startJitter,signal:true,tsp:params.tsp,holdRatio:params.holdRatio});
@@ -155,7 +155,13 @@ function focusMap(wide){
 function stopLive(){clearInterval(liveTimer);liveTimer=undefined;}
 function startLive(){stopLive();if(!map)return;refreshLive();liveTimer=setInterval(refreshLive,liveInterval*1000);}
 
+// 발표 모드가 다음 updateRouteMap에서 쓸 방식(rule)과 시작 시점·빠르기를 맡겨 둔다.
+// 지역을 바꾸면 updateRouteMap이 겹쳐 불린다. 마지막 호출만 발표 모드 시작 시점을 쓴다.
+let demoRun,calls=0;
+export function queueDemoRun({rule:key,at,rate:r}){rule=key;demoRun={at,rate:r};}
+
 export async function updateRouteMap(next){
+ const call=++calls;
  const areaChanged=params?.base!==next.base;
  params=next;
  if(map)focusMap(areaChanged);
@@ -187,6 +193,7 @@ export async function updateRouteMap(next){
     return;
    }
   }
+  if(call!==calls)return; // 더 새 호출이 이미 그리는 중
   clear(layers);routeLines.clear();
   const stop=params.stop;
   for(const id of params.routeIds){
@@ -198,6 +205,13 @@ export async function updateRouteMap(next){
   layers.push(new maps.CustomOverlay({map,position:new maps.LatLng(stop.lat,stop.lng),content:label,xAnchor:.5,yAnchor:1,zIndex:5}));
   focusMap(areaChanged);
   rebuildSim();
+  if(demoRun&&call===calls){
+   // 발표 모드: 줄이 생길 때까지 미리 돌려 두고 바로 재생한다.
+   const {at,rate:r}=demoRun;demoRun=undefined;
+   for(let t=0;t<at;t++)step(sim,1);
+   draw();rate=r;
+   if(!playing)$('sim-play').click();
+  }
   if(liveTimer)refreshLive();
  }catch(error){$('route-map-error').textContent=error.message;}
 }

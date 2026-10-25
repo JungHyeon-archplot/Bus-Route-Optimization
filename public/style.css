@@ -204,6 +204,26 @@ label.inline .hint{margin:0;flex-basis:100%}
 .focus-stop span{background:var(--amber);color:var(--asphalt);font-weight:700;font-size:13px;padding:5px 10px;border-radius:999px;white-space:nowrap;box-shadow:var(--shadow)}
 .focus-stop::after{content:"";width:0;height:0;border:7px solid transparent;border-top-color:var(--amber);margin-top:-1px}
 
+/* Presentation mode: full-width map, one-click scenes, big caption. */
+.demo-toggle{margin-left:auto;flex:none;border:1px solid rgba(255,255,255,.25);background:transparent;color:#eef1ef;border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer}
+.demo-toggle[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:var(--asphalt);font-weight:700}
+.demo-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 20px;background:var(--asphalt-2);overflow-x:auto}
+.demo-bar[hidden]{display:none}
+.demo-scenes,.demo-areas{display:flex;gap:6px}
+.demo-bar button{flex:none;display:flex;align-items:center;gap:8px;border:0;border-radius:var(--r-sm);padding:8px 12px;background:rgba(255,255,255,.08);color:#eef1ef;font-size:14px;cursor:pointer;white-space:nowrap}
+.demo-bar button:hover{background:rgba(255,255,255,.16)}
+.demo-bar button.on{background:var(--amber);color:var(--asphalt);font-weight:700}
+.demo-bar kbd{font:inherit;font-size:12px;font-weight:700;width:20px;height:20px;display:grid;place-items:center;border-radius:4px;background:rgba(0,0,0,.25)}
+.demo-areas button{border-radius:999px}
+body.demo .sim-layout{grid-template-columns:1fr}
+body.demo .panel,body.demo .bar p,body.demo .guide{display:none}
+body.demo .hud strong{font-size:34px}
+body.demo .hud span{font-size:14px}
+.demo-caption{position:absolute;z-index:3;top:16px;right:16px;max-width:min(560px,50%);padding:12px 18px;border-radius:var(--r);background:rgba(36,40,44,.92);color:#eef1ef;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;text-align:right}
+.demo-caption[hidden]{display:none}
+.demo-caption b{font-size:24px;color:var(--amber);line-height:1.25}
+.demo-caption span{font-size:13px;color:#aeb8b3}
+
 @media (max-width:900px){
  .summary{position:static;box-shadow:none}
  .guide{left:10px;right:10px;top:auto;bottom:80px;max-width:none}

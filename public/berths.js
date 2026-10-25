@@ -55,7 +55,7 @@ function render(){
  updateRouteMap({stop:graph.stop,focus:arsId,base:dataset.base,routeIds:graph.nodes.map(node=>node.id),edges:graph.edges,assignment,colors:berths,dwell,seed,minShared,palette:berthColors,
   overtake:pick('lane')==='free',meterGap:Number($('meter-gap').value),
   tsp:pick('tsp')==='1',holdRatio:Number(pick('hold')),zones:zones?2:1,passing:split==='pass',
-  areaStops:dataset.focusStops,calib:calibFor(pick('area')),habit:pick('habit')});
+  areaStops:dataset.focusStops,calib:calibFor(pick('area')),habit:pick('habit'),stopDwell});
  $('meter-out').textContent=Number($('meter-gap').value)?$('meter-gap').value+'초 간격':'끔';
 }
 
@@ -85,7 +85,21 @@ async function loadArea(){
  }
 }
 // 조건 탭의 모든 입력을 한곳에서 받는다. 출발 시각(timing)은 route-map.js가 직접 받는다.
+// 발표 모드: 시나리오 하나를 조건 탭 입력에 그대로 옮겨 한 번에 다시 그린다.
+// 승하차 단축 시나리오는 보고서 가정대로 그 밖의 정류장도 20→15초로 줄인다(stopDwell).
+let stopDwell;
+const check=(name,value)=>{document.querySelector(`input[name=${name}][value="${value}"]`).checked=true;};
+export async function applyScenario({area='',stop,lane='lane',berths=3,split='',habit='front',dwell=40,stopDwell:other,tsp='0',hold='0'},beforeRender=()=>{}){
+ if(pick('area')!==area){check('area',area);await loadArea();}
+ if(stop&&[...$('berth-stop').options].some(o=>o.value===stop))$('berth-stop').value=stop;
+ for(const [name,value] of [['lane',lane],['berths',berths],['split',split],['habit',habit],['tsp',tsp],['hold',hold]])check(name,value);
+ $('berth-dwell').value=dwell;$('meter-gap').value=0;$('sim-seed').value=1;stopDwell=other;
+ const random=document.querySelector('input[name=timing][value=random]');
+ if(!random.checked){random.checked=true;random.dispatchEvent(new Event('change',{bubbles:true}));}
+ beforeRender();render();
+}
 $('pane-cond').addEventListener('input',event=>{
+ stopDwell=undefined;
  const name=event.target.name;
  if(name==='area')loadArea();else if(name!=='timing'&&event.target.id!=='live-interval'&&event.target.id!=='live-toggle')render();
 });
