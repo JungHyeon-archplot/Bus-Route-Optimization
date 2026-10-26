@@ -206,6 +206,9 @@ label.inline .hint{margin:0;flex-basis:100%}
 
 /* Presentation mode: full-width map, one-click scenes, big caption. */
 .demo-toggle{margin-left:auto;flex:none;border:1px solid rgba(255,255,255,.25);background:transparent;color:#eef1ef;border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer}
+.demo-qr-btn{display:none}
+body.demo .demo-qr-btn{display:inline-block}
+.demo-qr-btn+.demo-toggle{margin-left:8px}
 .demo-toggle[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:var(--asphalt);font-weight:700}
 .demo-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 20px;background:var(--asphalt-2);overflow-x:auto}
 .demo-bar[hidden]{display:none}
