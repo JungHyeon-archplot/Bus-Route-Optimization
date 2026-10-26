@@ -206,8 +206,6 @@ label.inline .hint{margin:0;flex-basis:100%}
 
 /* Presentation mode: full-width map, one-click scenes, big caption. */
 .demo-toggle{margin-left:auto;flex:none;border:1px solid rgba(255,255,255,.25);background:transparent;color:#eef1ef;border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer}
-.demo-qr-btn{display:none}
-body.demo .demo-qr-btn{display:inline-block}
 .demo-qr-btn+.demo-toggle{margin-left:8px}
 .demo-toggle[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:var(--asphalt);font-weight:700}
 .demo-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 20px;background:var(--asphalt-2);overflow-x:auto}
@@ -236,6 +234,7 @@ body.demo .hud span{font-size:14px}
 /* Audience view (?view=public): team-only controls are hidden; the server still requires the team code. */
 .public-only{display:none}
 body.public .public-only{display:block}
+body.public li.public-only{display:list-item}
 body.public .team-only,body.public .records .remove{display:none!important}
 
 @media (max-width:900px){
@@ -247,6 +246,10 @@ body.public .team-only,body.public .records .remove{display:none!important}
  .panel{border-left:0;border-top:1px solid var(--line);overflow:visible}
  .legend{display:none}
  .bar p{display:none}
+ .bar{padding:8px 12px;gap:8px}
+ .bar h1{font-size:15px}
+ .demo-qr-btn{display:none}
+ .demo-bar{padding:8px 12px}
  .hud{left:10px;right:10px;top:10px;grid-template-columns:repeat(4,1fr)}
  .hud div{padding:6px 8px}.hud span{font-size:11px;white-space:normal;line-height:1.3}.hud strong{font-size:20px}
  .playbar{bottom:14px}
@@ -255,5 +258,13 @@ body.public .team-only,body.public .records .remove{display:none!important}
  .demo-caption b{font-size:18px}
  body.demo .hud strong{font-size:22px}
  body.demo .hud span{font-size:11px}
+}
+/* Touch screens: bigger targets, no keyboard hints, scenes snap while swiping. */
+@media (pointer:coarse){
+ .key-hint{display:none}
+ .seg span{padding:10px 4px;font-size:13px}
+ .demo-bar{scroll-snap-type:x proximity}
+ .demo-bar button{scroll-snap-align:center;padding:10px 14px}
+ .playbar .icon{width:44px;height:44px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

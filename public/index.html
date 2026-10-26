@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="/public/style.css"></head>
 <body>
-<header class="bar"><h1>중앙차로 정류장 시뮬레이터</h1><p>추월차로가 없는 중앙버스정류장에 버스가 한꺼번에 몰리면 얼마나 기다릴까요? 서울 신용산·삼각지와 일산 중앙로의 실제 노선 위에서 비교합니다.</p><button id="demo-qr-open" class="demo-toggle demo-qr-btn team-only" type="button">QR 보기</button><button id="demo-toggle" class="demo-toggle" type="button" aria-pressed="false">발표 모드</button></header>
+<header class="bar"><h1>중앙차로 정류장 시뮬레이터</h1><p>추월차로가 없는 중앙버스정류장에 버스가 한꺼번에 몰리면 얼마나 기다릴까요? 서울 신용산·삼각지와 일산 중앙로의 실제 노선 위에서 비교합니다.</p><button id="demo-qr-open" class="demo-toggle demo-qr-btn" type="button">QR 보기</button><button id="demo-toggle" class="demo-toggle" type="button" aria-pressed="false">발표 모드</button></header>
 <nav id="demo-bar" class="demo-bar" aria-label="발표 시연 조건" hidden><div id="demo-scenes" class="demo-scenes"></div><div id="demo-areas" class="demo-areas" aria-label="지역"></div></nav>
 <div id="demo-qr" class="demo-qr" role="dialog" aria-label="청중용 주소 QR" hidden><div><img src="/public/qr.svg" alt="청중용 시뮬레이터 주소 QR 코드" width="320" height="320"><p>bus-route-lab.jhsimon7.workers.dev</p><button type="button" id="demo-qr-close">닫기</button></div></div>
 <main class="sim-layout">
@@ -23,7 +23,7 @@
   <div class="speed" role="radiogroup" aria-label="빠르기"><label><input type="radio" name="rate" value="10"><span>10×</span></label><label><input type="radio" name="rate" value="30" checked><span>30×</span></label><label><input type="radio" name="rate" value="90"><span>90×</span></label></div>
  </div>
  <div id="guide" class="guide" hidden>
-  <ol><li>패널에서 <b>정류장</b>과 조건을 고르고</li><li>결과의 <b>방식</b>을 눌러 비교한 뒤</li><li><b>▶ 재생</b>(스페이스바)으로 지도에서 확인하세요</li></ol>
+  <ol><li>패널에서 <b>정류장</b>과 조건을 고르고</li><li>결과의 <b>방식</b>을 눌러 비교한 뒤</li><li><b>▶ 재생</b><span class="key-hint">(스페이스바)</span>으로 지도에서 확인하세요</li><li class="public-only">위쪽 <b>발표 장면</b>을 누르면 발표에서 본 비교를 바로 볼 수 있습니다</li></ol>
   <button id="guide-close">알겠어요</button></div>
  <ul class="legend"><li><span class="bus-dot" style="background:#1f3a5f"></span>시뮬레이션 버스</li><li><span class="bus-dot queued" style="background:#1f3a5f"></span>자리를 기다리는 버스</li><li><span class="live-dot" style="background:#1f3a5f"></span>지금 실제 버스</li></ul>
 </div>

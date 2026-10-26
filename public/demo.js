@@ -32,6 +32,7 @@ async function show(i){
  current=i;document.activeElement?.blur(); // 누른 버튼에 초점 테두리가 남지 않게
  const [label,settings,rule='pooled']=SCENES[i],[,stop,name]=AREAS.find(([value])=>value===area);
  for(const b of list.children)b.classList.toggle('on',Number(b.dataset.i)===i);
+ list.children[i].scrollIntoView({block:'nearest',inline:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
  for(const b of $('demo-areas').children)b.classList.toggle('on',b.dataset.area===area);
  caption.hidden=false;caption.querySelector('b').textContent=`${i+1}. ${label}`;caption.querySelector('span').textContent=`${name} · 2시간 중 30분부터 · 시연은 한 번 실행(결과는 30회 평균)`;
  document.querySelector(`input[name=rate][value="${RATE}"]`).checked=true;
@@ -58,7 +59,7 @@ addEventListener('keydown',event=>{
 });
 // 청중용 주소(?view=public)는 팀 전용 기능(기록·삭제·팀 코드·실시간 버스·QR)을 숨긴다. 서버 권한은 그대로 팀 코드로 막혀 있다.
 const query=new URLSearchParams(location.search);
-if(query.get('view')==='public')document.body.classList.add('public');
+if(query.get('view')==='public'){document.body.classList.add('public');$('demo-toggle').textContent='발표 장면';}
 const qr=$('demo-qr');
 $('demo-qr-open').addEventListener('click',()=>{qr.hidden=false;$('demo-qr-close').focus();});
 $('demo-qr-close').addEventListener('click',()=>{qr.hidden=true;});

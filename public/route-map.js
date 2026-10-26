@@ -184,7 +184,8 @@ export async function updateRouteMap(next){
     if(!config.kakaoJsKey)throw new Error('지도 키가 설정되지 않았습니다.');
     await loadSdk(config.kakaoJsKey);maps=window.kakao.maps;
     map=new maps.Map($('route-map'),{center:new maps.LatLng(37.56,126.995),level:4});
-    map.addControl(new maps.ZoomControl(),maps.ControlPosition.RIGHT);
+    // 휴대폰은 두 손가락으로 확대하므로 확대 버튼을 두지 않는다(숫자판과 겹침).
+    if(matchMedia('(min-width:901px)').matches)map.addControl(new maps.ZoomControl(),maps.ControlPosition.RIGHT);
     addEventListener('resize',()=>{map.relayout();map.setCenter(new maps.LatLng(params.stop.lat,params.stop.lng));});
     $('route-map-error').textContent='';
    }catch(error){
