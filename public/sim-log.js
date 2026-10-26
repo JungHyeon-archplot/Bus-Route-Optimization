@@ -82,10 +82,13 @@ function renderRecords(){
  if(!memory.length){const li=document.createElement('li');li.className='empty';li.textContent='아직 기록이 없습니다. 조건을 고르고 "지금 조건의 결과 기록하기"를 누르세요.';list.append(li);return;}
  memory.forEach((record,index)=>{
   const li=document.createElement('li'),head=document.createElement('div'),name=document.createElement('span'),value=document.createElement('b'),track=document.createElement('div'),fill=document.createElement('i'),meta=document.createElement('small'),remove=document.createElement('button');
-  name.textContent=`${index+1}. ${RULES[record.rule]}${record.rule==='single'?'':` ${record.berths}곳`} · ${TIMING[record.timing]} · ${record.dwell}초`;
+  // 발표 근거 기록(label·runs·passengerWait·note)은 케이스 이름과 seed 1~30 평균으로 보여 준다.
+  name.textContent=`${index+1}. ${record.label??`${RULES[record.rule]}${record.rule==='single'?'':` ${record.berths}곳`} · ${TIMING[record.timing]} · ${record.dwell}초`}`;
   value.textContent=secs(record.totalWait);head.append(name,value);
   track.className='track';fill.style.width=(record.totalWait/max*100)+'%';track.append(fill);
-  meta.textContent=`${record.stopName} · ${record.served}대 중 ${record.waited}대 기다림 · 긴 줄 ${record.maxQueue}대 · seed ${record.seed} · 기준 ${record.minShared}곳${record.by?' · '+record.by:''}`;
+  meta.textContent=record.runs
+   ?`${record.stopName} · seed 1~${record.runs} 평균 · 승객 대기 ${secs(record.passengerWait)} · 긴 줄 ${record.maxQueue}대${record.note?' · '+record.note:''}${record.by?' · '+record.by:''}`
+   :`${record.stopName} · ${record.served}대 중 ${record.waited}대 기다림 · 긴 줄 ${record.maxQueue}대 · seed ${record.seed} · 기준 ${record.minShared}곳${record.by?' · '+record.by:''}`;
   remove.type='button';remove.className='remove';remove.textContent='지우기';remove.setAttribute('aria-label',`${index+1}번 기록 지우기`);
   remove.addEventListener('click',async()=>{
    try{
@@ -117,8 +120,8 @@ $('record-add').addEventListener('click',async()=>{
 });
 $('record-csv').addEventListener('click',()=>{
  if(!memory.length)return;
- saveCsv('실험기록.csv',[['기록 시각','기록한 사람','정류장','ARS','서는 방식','설 자리 수','버스 오는 시점','정차(초)','seed','함께 달림 기준(공유 정류장)','모의 시간(시간)','정차한 버스','기다린 버스','기다린 시간 합(초)','기다린 버스 평균 대기(초)','가장 긴 줄','이어진 쌍에서 생긴 대기(%)'],
-  ...memory.map(r=>[new Date(r.savedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),r.by??'',r.stopName,r.arsId,RULES[r.rule],r.berths,TIMING[r.timing],r.dwell,r.seed,r.minShared,r.hours,r.served,r.waited,r.totalWait,r.waited?Math.round(r.totalWait/r.waited*10)/10:0,r.maxQueue,r.linkedShare??''])]);
+ saveCsv('실험기록.csv',[['기록 시각','기록한 사람','케이스','정류장','ARS','서는 방식','설 자리 수','버스 오는 시점','정차(초)','seed','함께 달림 기준(공유 정류장)','모의 시간(시간)','정차한 버스','기다린 버스','기다린 시간 합(초)','기다린 버스 평균 대기(초)','가장 긴 줄','이어진 쌍에서 생긴 대기(%)','반복','승객 대기(초)','비고'],
+  ...memory.map(r=>[new Date(r.savedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),r.by??'',r.label??'',r.stopName,r.arsId,RULES[r.rule],r.berths,TIMING[r.timing],r.dwell,r.seed,r.minShared,r.hours,r.served,r.waited,r.totalWait,r.waited?Math.round(r.totalWait/r.waited*10)/10:0,r.maxQueue,r.linkedShare??'',r.runs?`seed 1~${r.runs} 평균`:'',r.passengerWait??'',r.note??''])]);
 });
 $('record-refresh').addEventListener('click',loadRecords);
 
