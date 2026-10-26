@@ -11,3 +11,6 @@ playwright-report/
 *.log
 __pycache__/
 .DS_Store
+dist/
+.wrangler/
+.dev.vars
