@@ -56,4 +56,12 @@ addEventListener('keydown',event=>{
  const n=Number(event.key);
  if(n>=1&&n<=SCENES.length){event.preventDefault();show(n-1);}
 });
-if(new URLSearchParams(location.search).get('demo')==='1')setDemo(true);
+// 청중용 주소(?view=public)는 팀 전용 기능(기록·삭제·팀 코드·실시간 버스·QR)을 숨긴다. 서버 권한은 그대로 팀 코드로 막혀 있다.
+const query=new URLSearchParams(location.search);
+if(query.get('view')==='public')document.body.classList.add('public');
+const qr=$('demo-qr');
+$('demo-qr-open').addEventListener('click',()=>{qr.hidden=false;$('demo-qr-close').focus();});
+$('demo-qr-close').addEventListener('click',()=>{qr.hidden=true;});
+qr.addEventListener('click',event=>{if(event.target===qr)qr.hidden=true;});
+addEventListener('keydown',event=>{if(event.key==='Escape')qr.hidden=true;});
+if(query.get('demo')==='1')setDemo(true);

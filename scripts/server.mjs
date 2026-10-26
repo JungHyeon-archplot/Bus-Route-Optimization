@@ -11,7 +11,7 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
   const liveCache=new Map(),usage={day:'',calls:0};
   const today=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
   let allowed;
-  const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8'};
+  const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
   return http.createServer(async(req,res)=>{
     const pathname=new URL(req.url,'http://localhost').pathname;
     if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);return res.end();}
@@ -44,7 +44,7 @@ export function createServer(root=fileURLToPath(new URL('../',import.meta.url)),
       pathname==='/ilsan/routes.json'?'data/public/ilsan/routes.json':
       pathname==='/observation.json'?'data/public/observations/latest.json':
       pathname==='/hub-models.json'?'data/reference/hub-models.json':
-      /^\/(?:public|src)\/[A-Za-z0-9_-]+\.(?:js|css)$/.test(pathname)?pathname.slice(1):null;
+      /^\/(?:public|src)\/[A-Za-z0-9_-]+\.(?:js|css|svg)$/.test(pathname)?pathname.slice(1):null;
     if(!file){res.writeHead(404);return res.end('Not found');}
     try {
       const data=await readFile(path.join(root,file));

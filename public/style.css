@@ -223,6 +223,17 @@ body.demo .hud span{font-size:14px}
 .demo-caption[hidden]{display:none}
 .demo-caption b{font-size:24px;color:var(--amber);line-height:1.25}
 .demo-caption span{font-size:13px;color:#aeb8b3}
+.demo-qr{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(20,24,28,.72)}
+.demo-qr[hidden]{display:none}
+.demo-qr>div{background:#fff;border-radius:var(--r);padding:24px;text-align:center;box-shadow:var(--shadow)}
+.demo-qr img{display:block;width:min(70vmin,420px);height:auto}
+.demo-qr p{margin:12px 0;font-size:20px;font-weight:700}
+.demo-qr button{border:0;border-radius:999px;padding:8px 20px;background:var(--asphalt);color:#fff;font:inherit;cursor:pointer}
+.one-run{margin:6px 0 0;font-size:12px}
+/* Audience view (?view=public): team-only controls are hidden; the server still requires the team code. */
+.public-only{display:none}
+body.public .public-only{display:block}
+body.public .team-only,body.public .records .remove{display:none!important}
 
 @media (max-width:900px){
  .summary{position:static;box-shadow:none}
@@ -236,5 +247,10 @@ body.demo .hud span{font-size:14px}
  .hud{left:10px;right:10px;top:10px;grid-template-columns:repeat(4,1fr)}
  .hud div{padding:6px 8px}.hud span{font-size:11px;white-space:normal;line-height:1.3}.hud strong{font-size:20px}
  .playbar{bottom:14px}
+ body.demo .map-wrap{height:calc(100dvh - 110px)}
+ .demo-caption{top:auto;bottom:84px;left:10px;right:10px;max-width:none;text-align:left;padding:8px 12px}
+ .demo-caption b{font-size:18px}
+ body.demo .hud strong{font-size:22px}
+ body.demo .hud span{font-size:11px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
